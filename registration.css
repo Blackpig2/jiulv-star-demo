@@ -1,0 +1,47 @@
+.reg-layout{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap:60px;padding:30px 0 55px;align-items:start}.reg-intro{padding:28px 0;position:sticky;top:35px}.reg-intro h1{font:400 clamp(30px,4vw,43px)/1.55 'Songti SC',serif;color:#204c40;margin:20px 0}.reg-intro>p{font-size:14px;line-height:2;color:#6e7e6c;max-width:400px}.reg-boundary{background:#edf2e6;border:1px solid #dce5d2;border-radius:13px;margin-top:30px;padding:23px;color:#6b7e5e;font-size:12px;line-height:1.9}.reg-boundary b{font-size:13px;color:#48663e}.reg-boundary p{margin:10px 0 0}.reg-panel{background:#fffefa;border:1px solid #dfe5d8;border-radius:16px;padding:30px;min-width:0}.reg-mode-tabs{display:flex;gap:18px;border-bottom:1px solid #e3e8dd;margin:25px 0 22px;flex-wrap:wrap}.reg-mode-tabs button{background:none;padding:10px 0;color:#84917a;font-size:12px;border-bottom:2px solid transparent}.reg-mode-tabs button.active{color:#315d38;border-color:#769964}.reg-panel h2{font-size:23px;color:#315637;margin:0 0 23px;font-weight:550}.reg-form{gap:19px}.reg-field input{min-height:45px}.reg-code-row{display:flex;gap:9px}.reg-code-row input{min-width:0;flex:1}.reg-code-row button{flex-shrink:0;font-size:11px;padding:9px 12px}.reg-channel{display:flex;gap:15px}.reg-channel button{font-size:12px;background:none;color:#84917a;padding:2px 0}.reg-channel button[aria-pressed=true]{color:#315d38;font-weight:600}.reg-discovery{background:#f2f5ed;padding:13px;border-radius:8px}.reg-form .ft-consent{font-size:11px;line-height:1.8}.reg-alert{font-size:12px;line-height:1.8;background:#f6f0dd;padding:13px;border-radius:8px;color:#8a7246}.reg-session{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;padding-top:20px;margin-top:24px;border-top:1px solid #e3e9da;font-size:11px;color:#768969}.reg-local-switch{border-top:1px solid #e3e9da;padding-top:18px;margin-top:20px;font-size:11px;color:#6d7f60}.reg-local-switch summary{cursor:pointer;color:#4f6f42;line-height:1.7}.reg-local-switch p{line-height:1.8;margin:13px 0}.reg-local-switch button{display:block;max-width:100%;margin:8px 0;font-size:11px}.reg-form .ft-actions{gap:10px}.reg-form .ft-actions button{font-size:12px}.reg-field small{font-size:10px!important;line-height:1.8;color:#7b896f}
+@media(max-width:800px){.reg-layout{grid-template-columns:1fr;gap:20px;padding-top:12px}.reg-intro{position:static;padding:0}.reg-intro h1{font-size:29px;margin:12px 0}.reg-intro>p{font-size:12px;max-width:none}.reg-boundary{padding:15px;margin-top:18px}.reg-boundary p{font-size:11px}.reg-panel{padding:23px}.reg-form input{font-size:16px}.reg-intro h1 br{display:none}}
+@media(max-width:440px){.reg-panel{padding:21px 17px}.reg-form{grid-template-columns:1fr}.reg-field{grid-column:1/-1}.reg-panel h2{font-size:21px}.reg-mode-tabs{gap:15px}.reg-mode-tabs button{font-size:11px}.reg-code-row{gap:7px}.reg-code-row button{padding:8px;font-size:10px}}
+.reg-license{padding:18px;border:1px solid #dce5d3;border-radius:12px;background:#f6f8f1;min-width:0}.reg-license-heading{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:#355939;font-size:13px}.reg-license-heading>span{font-size:11px;color:#798770}.reg-license>p{font-size:11px;line-height:1.8;margin:10px 0;color:#718067}.reg-license-selection{display:flex;gap:11px;align-items:center;padding:13px;background:#fffefb;border-radius:8px;border:1px solid #e1e7d9;margin:12px 0}.reg-license-selection>div{flex:1;min-width:0}.reg-license-selection b{font-size:12px;color:#33553b;display:block;overflow-wrap:anywhere;line-height:1.7}.reg-license-selection small{display:block;font-size:10px;color:#78876e;line-height:1.8;margin-top:3px}.reg-license-icon{display:grid;place-items:center;width:30px;height:34px;border-radius:7px;background:#e8efdf;color:#59734e;font-size:22px;flex-shrink:0}.reg-license-selection button{flex-shrink:0;font-size:11px}.reg-license-empty{font-size:12px;color:#8a947f;padding:16px 0}.reg-license-picker{display:block;font-size:11px;color:#48643c;line-height:1.8}.reg-license-picker>span{display:block;margin:4px 0 7px}.reg-license-picker input{display:block;max-width:100%;width:100%;font-size:11px;padding:0;background:transparent;border:0;color:#76856b;cursor:pointer}.reg-license-picker input::file-selector-button{border:1px solid #cad8bc;border-radius:7px;background:#fffefb;color:#365c35;padding:9px 12px;margin-right:10px;cursor:pointer;font:inherit}.reg-license-sample{display:inline-block;margin-top:13px;font-size:11px;line-height:1.6}.reg-license>small{display:block;color:#88927e;font-size:10px;line-height:1.9;margin-top:10px}.reg-license .reg-license-error{color:#a34832;margin:8px 0 0}.reg-license-error:empty{display:none}@media(max-width:440px){.reg-license{padding:14px}.reg-license-heading{gap:6px}.reg-license-picker input{font-size:11px!important;min-height:38px}.reg-license-selection{padding:10px;gap:8px}}
+
+.reg-panel>.reg-mode-tabs:first-child{margin-top:0}.reg-intro .overline{letter-spacing:.14em}
+.reg-visibility-note{margin:0;padding:13px 15px;border-radius:10px;background:#f2f5ec;color:#66795e;font-size:11px;line-height:1.9}.reg-legacy-link{text-align:left;font-size:11px}.reg-wechat-card>div>small{display:block;line-height:1.7}
+
+/* Phone-first student entry; profile details are collected when making a resume. */
+.reg-student-layout{max-width:960px;margin:0 auto;gap:64px;align-items:center;padding:42px 0 52px}
+.reg-student-layout .reg-intro{position:static;padding:0}
+.reg-student-layout .reg-intro h1{margin:0;line-height:1.5}
+.reg-student-layout .reg-panel{padding:30px}
+.reg-student-layout .reg-panel h2{font-size:21px;margin-bottom:25px}
+.reg-student-layout .reg-form{gap:20px}
+.reg-consent-block>p{font-size:12px;color:#7a8576;line-height:1.7;margin:0 0 10px}
+.reg-agreement-row{display:flex;align-items:flex-start;gap:10px;font-size:12px;line-height:1.85;color:#71806b}
+.reg-agreement-row>input{width:18px;height:18px;min-height:18px;flex:0 0 18px;margin:3px 0 0;accent-color:#315b43;padding:0}
+.reg-agreement-row label{cursor:pointer}
+.reg-agreement-row button{background:none;border:0;border-radius:3px;padding:0;color:#315b43;font:inherit;line-height:inherit;text-align:left}
+.reg-agreement-row button:hover{text-decoration:underline}
+.reg-agreement-row button:focus-visible{outline:2px solid #315b43;outline-offset:3px}
+.reg-student-layout .ft-actions>.primary{width:100%;min-height:48px;font-size:14px;letter-spacing:.5px}
+.reg-demo-caption{display:flex;flex-direction:column;gap:8px;font-size:11px;line-height:1.8;color:#87917c;margin-top:16px}
+.reg-demo-caption button{align-self:flex-start;padding:2px 0;background:none;color:#58724f;font:inherit;text-decoration:underline;text-underline-offset:3px}
+.reg-student-layout .reg-local-switch{margin-top:16px;padding-top:14px}
+.reg-policy h2{font-size:24px;line-height:1.5;color:#244b3e}
+.reg-policy-version,.reg-policy-foot{font-size:12px;line-height:1.8;color:#7a8575}
+.reg-policy section{margin:22px 0}
+.reg-policy h3{font-size:16px;line-height:1.6;color:#315b43;margin-bottom:8px}
+.reg-policy section p{font-size:14px;line-height:1.95;color:#596853}
+@media(max-width:800px){
+  .reg-student-layout{gap:22px;padding:22px 0 28px}
+  .reg-student-layout .reg-intro h1{font-size:29px}
+  .reg-student-layout .reg-panel{padding:26px 22px}
+  .reg-student-layout .reg-panel h2{font-size:20px;margin-bottom:22px}
+  .reg-student-layout .reg-form{gap:18px}
+  .reg-agreement-row{font-size:12px}
+  .reg-policy h2{font-size:21px}
+}
+@media(max-width:360px){
+  .reg-student-layout .reg-panel{padding:22px 16px}
+  .reg-student-layout .reg-intro h1{font-size:25px}
+  .reg-agreement-row{gap:8px;font-size:11px}
+}
+
+.reg-account-readonly dl{margin:22px 0;padding:18px 20px;background:#f0f3eb;border-radius:12px}.reg-account-readonly dt{color:#798975;font-size:12px}.reg-account-readonly dd{margin:6px 0 0;font-size:20px;color:#2f5142}.reg-account-readonly>p{font-size:13px;line-height:1.8;color:#74806f}.reg-account-readonly .ft-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
