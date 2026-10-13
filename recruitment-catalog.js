@@ -62,7 +62,7 @@
       if (!validMonth(schedule.startMonth) || !/^(?:[1-9]|1[0-2]|unlimited)$/.test(schedule.durationMonths)) return '发布前请选择实习开始年月与实习时长。';
     } else if (!validDate(schedule.startDate) || !validDate(schedule.endDate) || schedule.startDate > schedule.endDate) return '发布前请填写有效的实习起止日期。';
     const minimum = plan.conditions?.formVersion === SIMPLE_FORM_VERSION ? plan.conditions.values?.minimumDurationMonths : '';
-    if (schedule.schedulePrecision === 'month' && /^(?:[1-9]|1[0-2])$/.test(String(minimum ?? '')) && /^(?:[1-9]|1[0-2])$/.test(schedule.durationMonths) && Number(schedule.durationMonths) < Number(minimum)) return `当前计划为${schedule.durationMonths}个月，短于酒店最低实习时长（至少${minimum}个月）。请调整计划时长，或前往实习信息修改最低要求后再发布。`;
+    if (schedule.schedulePrecision === 'month' && /^(?:[1-9]|1[0-2])$/.test(String(minimum ?? '')) && /^(?:[1-9]|1[0-2])$/.test(schedule.durationMonths) && Number(schedule.durationMonths) < Number(minimum)) return `当前计划为${schedule.durationMonths}个月，短于酒店最低实习时长（至少${minimum}个月）。请调整计划时长，或前往实习机会中的实习信息修改最低要求后再发布。`;
     if (plan.conditions?.formVersion !== SIMPLE_FORM_VERSION && plan.conditions?.values?.validUntil && !validDate(plan.conditions.values.validUntil)) return '请核对招聘信息有效日期。';
     return '';
   }
