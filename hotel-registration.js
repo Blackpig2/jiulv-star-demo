@@ -1,7 +1,7 @@
 (function () {
   'use strict';
   const api = window.JiulvDemo, rules = window.JiulvAccountCore, auth = window.JiulvHotelAuth, regions = window.JiulvRegions, e = api.e;
-  const policyVersion = 'demo-hotel-2026-10-11';
+  const policyVersion = 'demo-hotel-2026-10-16';
   let mode = 'register', channel = 'phone', draft = {}, challenge = null, attempts = 0, licenseError = '', busy = false, epoch = 0, ownSave = false, callback = null, origin = 'employer';
   const disabledBeforeSubmit = new WeakMap();
   const current = () => api.getHotelSession();
@@ -33,7 +33,10 @@
     return `<div class="ft-full hotel-city-fields"><label class="ft-field reg-field"><span>省 / 直辖市 / 港澳 *</span><select name="provinceId" required><option value="">请选择省级单位</option>${regions.regions.map(row => `<option value="${e(row.id)}"${row.id === draft.provinceId ? ' selected' : ''}>${e(row.name)}</option>`).join('')}</select></label>${terminal ? `<div class="hotel-city-selected"><span>所在城市</span><b>${e(region.cities[0].name)}</b><input type="hidden" name="cityId" value="${e(region.cities[0].id)}"></div>` : `<label class="ft-field reg-field"><span>${region?.type === 'taiwan' ? '县 / 市' : '城市'} *</span><select name="cityId" required${region ? '' : ' disabled'}><option value="">${region ? '请选择城市' : '请先选择省级单位'}</option>${(region?.cities || []).map(city => `<option value="${e(city.id)}"${city.id === draft.cityId ? ' selected' : ''}>${e(city.name)}</option>`).join('')}</select></label>`}</div>`;
   }
   const groupOptions = () => window.JiulvCore?.hotelGroupOptions?.(window.JIULV_HOTEL_GROUPS || []) || [...(window.JIULV_HOTEL_GROUPS || []).map(({id,name}) => ({id,name})), {id:'independent',name:'独立酒店 / 其他集团'}];
-  function groupField() { return `<label class="ft-field ft-full reg-field"><span>酒店所属集团 *</span><select name="groupId" required><option value="">请选择酒店集团</option>${groupOptions().map(group => `<option value="${e(group.id)}"${draft.groupId === group.id ? ' selected' : ''}>${e(group.name)}</option>`).join('')}</select></label>`; }
+  function groupField() {
+    const brands = rules.hotelBrandOptions(window.JIULV_HOTEL_GROUPS || [], draft.groupId);
+    return `<label class="ft-field reg-field"><span>酒店所属集团 *</span><select name="groupId" required><option value="">请选择酒店集团</option>${groupOptions().map(group => `<option value="${e(group.id)}"${draft.groupId === group.id ? ' selected' : ''}>${e(group.name)}</option>`).join('')}</select></label><label class="ft-field reg-field"><span>酒店所属品牌 *</span><select name="brandId" required${draft.groupId ? '' : ' disabled'}><option value="">${draft.groupId ? '请选择酒店品牌' : '请先选择酒店集团'}</option>${brands.map(brand => `<option value="${e(brand.id)}"${draft.brandId === brand.id ? ' selected' : ''}>${e(brand.name)}${brand.english && brand.english !== brand.name ? ` · ${e(brand.english)}` : ''}</option>`).join('')}</select></label>`;
+  }
   function consent() {
     return `<div class="ft-full reg-consent-block"><p>使用此功能需注册 / 登录酒旅之星酒店账户</p><div class="reg-agreement-row"><input id="hotel-consent" type="checkbox" name="ack" required aria-labelledby="hotel-consent-text"${checked(draft.ack)}><div id="hotel-consent-text"><label for="hotel-consent">我已阅读并同意</label><button type="button" data-hotel-reg-action="policy" data-policy="terms">《用户协议》</button><button type="button" data-hotel-reg-action="policy" data-policy="privacy">《隐私政策》</button>及<button type="button" data-hotel-reg-action="policy" data-policy="mini">《酒旅之星小程序隐私保护指引》</button></div></div></div>`;
   }
@@ -54,12 +57,12 @@
   const policies = {
     terms: { title: '用户协议', sections: [
       ['这是一份体验稿', '本页用于体验酒店注册、登录与协议阅读流程，运营主体与正式条款尚待确认，不代表已开通真实招聘委托或完成酒店资质审核。'],
-      ['酒店账户', '酒店账户使用酒店中文名称、所属集团、所在城市、工作邮箱、手机号与营业执照资料建立。请由获酒店授权的人员操作；酒店中文名称可与营业执照主体名称不同，但须如实填写。'],
+      ['酒店账户', '酒店账户使用酒店中文名称、所属集团与品牌、所在城市、工作邮箱、手机号与营业执照资料建立。请由获酒店授权的人员操作；酒店中文名称可与营业执照主体名称不同，但须如实填写。'],
       ['招聘与联系', '招聘计划、实习条件与候选人回应由酒店负责核对。浏览简历始终隐藏联系方式，只有对应投递确认或学生接受邀请后，按该次授权开放联系方式。'],
       ['资料与服务帮助', '账户基础资料需要修改、关联冲突或收不到验证消息时，通过“联系酒旅之星”反馈。演示留言仅保存在本浏览器，尚未送达真实客服。']
     ]},
     privacy: { title: '隐私政策', sections: [
-      ['当前演示的数据', '酒店名称、集团、城市、工作邮箱、手机号、协议同意记录、密码派生校验信息与业务记录保存在此浏览器。营业执照仅保存文件名、格式和大小，文件内容不上传。请使用虚构资料与密码。'],
+      ['当前演示的数据', '酒店名称、集团与品牌、城市、工作邮箱、手机号、协议同意记录、密码派生校验信息与业务记录保存在此浏览器。营业执照仅保存文件名、格式和大小，文件内容不上传。请使用虚构资料与密码。'],
       ['验证与登录', '可选择手机或工作邮箱接收验证码。仅所选且验证成功的联系方式记为已验证；未验证的备用联系方式不可用于找回密码。登录可用登记手机号或邮箱加密码。'],
       ['保持登录', '默认仅保留本次浏览器会话。主动勾选后在此设备保留30天登录状态；不保存明文密码。此功能是本机演示，真实服务仍需服务端身份校验、会话失效与安全管理。'],
       ['信息展示与权利', '招聘计划中的公开内容供实习生浏览；营业执照、登录凭据不作为岗位详情公开展示。资料修正、访问、删除和注销等问题通过“联系酒旅之星”提出，正式上线前需落实处理渠道和保存期限。'],
@@ -74,13 +77,13 @@
   };
   function showPolicy(key) {
     const policy = policies[key]; if (!policy) return;
-    api.modal(`<article class="reg-policy"><h2>${policy.title}</h2><p class="reg-policy-version">体验稿 · 2026年10月11日 · 非正式上线文件</p>${policy.sections.map(([title, text]) => `<section><h3>${title}</h3><p>${text}</p></section>`).join('')}<p class="reg-policy-foot">关闭后可继续填写；查看文件不会自动勾选同意。</p></article>`, '酒店账号与隐私');
+    api.modal(`<article class="reg-policy"><h2>${policy.title}</h2><p class="reg-policy-version">体验稿 · 2026年10月16日 · 非正式上线文件</p>${policy.sections.map(([title, text]) => `<section><h3>${title}</h3><p>${text}</p></section>`).join('')}<p class="reg-policy-foot">关闭后可继续填写；查看文件不会自动勾选同意。</p></article>`, '酒店账号与隐私');
   }
   function profileMarkup(account) {
     const access = rules.hotelAccess(account), needsPlatform = !access.allowed && access.reason !== 'missing-license';
     const status = method => auth.verifiedTarget(account, method) ? '已模拟验证' : '未验证';
     const contactRow = (method, label, value) => `<div><dt>${label}</dt><dd>${e(value || '未登记')}<span class="hotel-verification-status">${value ? status(method) : ''}</span>${value && !auth.verifiedTarget(account, method) ? `<button type="button" class="text-button" data-hotel-reg-action="verify" data-channel="${method}">验证此${method === 'phone' ? '手机号' : '邮箱'}</button>` : ''}</dd></div>`;
-    return `<h2>酒店账户资料</h2><dl class="hotel-account-summary"><div><dt>酒店中文名称</dt><dd>${e(account.hotelName)}</dd></div><div><dt>所在城市</dt><dd>${e(window.JiulvRegions?.formatCity?.(account.hotelCity) || account.hotelCity || '未登记')}</dd></div><div><dt>酒店所属集团</dt><dd>${e(groupOptions().find(group => group.id === account.groupId)?.name || account.groupName || '未登记 · 可联系平台补充')}</dd></div>${contactRow('email', 'HR 工作邮箱', account.hrEmail)}${contactRow('phone', '手机号码', account.phone)}<div><dt>营业执照</dt><dd>${e(account.businessLicense?.name || '尚未选择')}<span class="hotel-verification-status">${rules.businessLicenseComplete(account.businessLicense) ? '仅选件记录 · 未审核' : '请补充后继续'}</span></dd></div></dl><p class="hotel-account-help">${needsPlatform ? '账户资料尚待完善，请联系酒旅之星协助处理。' : '需要修改账户资料？联系酒旅之星，由平台协助处理。'}</p><div class="hotel-account-actions"><button type="button" class="primary" data-hotel-reg-action="${needsPlatform ? 'contact' : 'continue'}">${needsPlatform ? '联系平台完善账户' : access.allowed ? '继续使用' : '补充营业执照'}</button>${needsPlatform ? '' : '<button type="button" class="secondary" data-hotel-reg-action="contact">联系酒旅之星</button>'}</div><div class="hotel-account-tools"><button type="button" class="text-button" data-hotel-reg-action="reset">${account.passwordCredential ? '忘记 / 重设密码' : '首次设置登录密码'}</button><button type="button" class="text-button" data-hotel-reg-action="logout">退出酒店账户</button></div>`;
+    return `<h2>酒店账户资料</h2><dl class="hotel-account-summary"><div><dt>酒店中文名称</dt><dd>${e(account.hotelName)}</dd></div><div><dt>所在城市</dt><dd>${e(window.JiulvRegions?.formatCity?.(account.hotelCity) || account.hotelCity || '未登记')}</dd></div><div><dt>酒店所属集团</dt><dd>${e(groupOptions().find(group => group.id === account.groupId)?.name || account.groupName || '未登记 · 可联系平台补充')}</dd></div><div><dt>酒店所属品牌</dt><dd>${e(rules.hotelBrandSelection(window.JIULV_HOTEL_GROUPS || [], account.groupId, account.brandId)?.brandName || account.brandName || '未登记 · 可联系平台补充')}</dd></div>${contactRow('email', 'HR 工作邮箱', account.hrEmail)}${contactRow('phone', '手机号码', account.phone)}<div><dt>营业执照</dt><dd>${e(account.businessLicense?.name || '尚未选择')}<span class="hotel-verification-status">${rules.businessLicenseComplete(account.businessLicense) ? '仅选件记录 · 未审核' : '请补充后继续'}</span></dd></div></dl><p class="hotel-account-help">${needsPlatform ? '账户资料尚待完善，请联系酒旅之星协助处理。' : '需要修改账户资料？联系酒旅之星，由平台协助处理。'}</p><div class="hotel-account-actions"><button type="button" class="primary" data-hotel-reg-action="${needsPlatform ? 'contact' : 'continue'}">${needsPlatform ? '联系平台完善账户' : access.allowed ? '继续使用' : '补充营业执照'}</button>${needsPlatform ? '' : '<button type="button" class="secondary" data-hotel-reg-action="contact">联系酒旅之星</button>'}</div><div class="hotel-account-tools"><button type="button" class="text-button" data-hotel-reg-action="reset">${account.passwordCredential ? '忘记 / 重设密码' : '首次设置登录密码'}</button><button type="button" class="text-button" data-hotel-reg-action="logout">退出酒店账户</button></div>`;
   }
   function render() {
     const root = host(); if (!root || document.body.dataset.perspective !== 'employer') return;
@@ -161,6 +164,8 @@
       const city = regions.findCity(values.cityId), region = regions.findRegion(values.provinceId), group = groupOptions().find(group => group.id === values.groupId);
       if (!String(values.hotelName || '').trim() || !city || !region || city.regionId !== region.id) return api.toast('请填写酒店中文名称，并选择省级单位和所在城市。');
       if (!group) return api.toast('请选择酒店所属集团；独立酒店请选择独立酒店 / 其他集团。');
+      const brand = rules.hotelBrandSelection(window.JIULV_HOTEL_GROUPS || [], group.id, values.brandId);
+      if (!brand) return api.toast('请选择该集团下的酒店品牌；目录暂未收录的可选择其他品牌 / 待补充。');
       if (!rules.businessLicenseComplete(values.businessLicense)) { licenseError = '请先选择营业执照或使用虚构样例。'; renderLicense(); return api.toast(licenseError); }
       if (!verifyCode(values)) return;
       const error = auth.passwordError(values.password); if (error) return api.toast(error);
@@ -169,7 +174,7 @@
         const credential = await auth.createCredential(values.password); if (!stillHere(token)) return;
         if (auth.resolveRegistrationIdentity(identity, library()).error) return api.toast('账户资料已更新，请使用已有账户登录或联系平台。');
         const id = crypto.randomUUID();
-        const created = { role: 'hotel', id, hotelId: id, hotelName: values.hotelName.trim(), hotelCity: city.label, hotelCityId: city.id, hotelProvince: region.name, hotelProvinceId: region.id, groupId: group.id, groupName: group.name, hrEmail: identity.email, phone: identity.phone, passwordCredential: credential, verification: { [channel]: { target: normalized(channel, channel === 'phone' ? identity.phone : identity.email), verifiedAt: new Date().toISOString() } }, businessLicense: { ...values.businessLicense }, agreementConsent: policyConsent(), demoVerified: true };
+        const created = { role: 'hotel', id, hotelId: id, hotelName: values.hotelName.trim(), hotelCity: city.label, hotelCityId: city.id, hotelProvince: region.name, hotelProvinceId: region.id, groupId: group.id, groupName: group.name, ...brand, hrEmail: identity.email, phone: identity.phone, passwordCredential: credential, verification: { [channel]: { target: normalized(channel, channel === 'phone' ? identity.phone : identity.email), verifiedAt: new Date().toISOString() } }, businessLicense: { ...values.businessLicense }, agreementConsent: policyConsent(), demoVerified: true };
         created.demoProfile = Boolean(values.sample && created.hotelName === '星湾示范酒店（虚构）' && created.hrEmail === 'hr@starbay.example.invalid' && created.phone === '13800000101');
         if (save(created, rememberOption)) { api.toast('酒店演示账户已建立，继续刚才的操作。'); finish(); }
       } catch (error) { if (stillHere(token)) api.toast('本机密码处理未完成，请重试；未创建酒店账户。'); }
@@ -212,7 +217,7 @@
     if (action === 'channel' && ['phone', 'email'].includes(button.dataset.channel) && ['register', 'reset'].includes(mode)) { capture(); channel = button.dataset.channel; invalidate(); return render(); }
     if (action === 'reset') { capture(); const account = current(); draft.identifier = draft.identifier || account?.hrEmail || draft.hrEmail || draft.phone || ''; draft.password = ''; draft.ack = false; mode = 'reset'; const found = auth.findHotelByIdentifier(draft.identifier, library()); channel = found && !auth.verifiedTarget(found, 'phone') && auth.verifiedTarget(found, 'email') ? 'email' : 'phone'; invalidate(); return render(); }
     if (action === 'code' && ['register', 'reset', 'verify'].includes(mode)) { capture(); const target = targetForCode(); if (!rules.validTarget(channel, target)) return api.toast(mode === 'register' ? `请先填写有效的${channel === 'phone' ? '手机号' : '工作邮箱'}。` : '该方式未验证或账户未找到，请切换已验证方式；都不可用时联系酒旅之星。'); challenge = rules.issueChallenge({ role: 'hotel', mode, channel, target }); attempts = 0; draft.code = ''; const code = form()?.elements.namedItem('code'); if (code) code.value = ''; document.getElementById('hotel-code-status').textContent = `本机模拟码：246810；用于 ${target}，5分钟有效。没有实际发送。`; return; }
-    if (action === 'sample' && mode === 'register') { capture(); draft = { ...draft, hotelName: '星湾示范酒店（虚构）', provinceId: '31', cityId: '310000', groupId: 'independent', hrEmail: 'hr@starbay.example.invalid', phone: '13800000101', password: 'DemoHotel2026!', businessLicense: rules.sampleBusinessLicense(), sample: true, ack: false }; licenseError = ''; invalidate(); render(); return api.toast('已填入虚构示例，请获取模拟码并阅读协议。'); }
+    if (action === 'sample' && mode === 'register') { capture(); draft = { ...draft, hotelName: '星湾示范酒店（虚构）', provinceId: '31', cityId: '310000', groupId: 'independent', brandId: 'independent', hrEmail: 'hr@starbay.example.invalid', phone: '13800000101', password: 'DemoHotel2026!', businessLicense: rules.sampleBusinessLicense(), sample: true, ack: false }; licenseError = ''; invalidate(); render(); return api.toast('已填入虚构示例，请获取模拟码并阅读协议。'); }
     if (['license-sample', 'license-remove'].includes(action) && ['register', 'license'].includes(mode)) { draft.businessLicense = action === 'license-sample' ? rules.sampleBusinessLicense() : null; licenseError = ''; return renderLicense(); }
     if (action === 'logout') { epoch++; ownSave = true; try { api.logout('hotel'); } finally { ownSave = false; } mode = 'login'; draft = {}; invalidate(); return render(); }
     if (action === 'account') { mode = 'account'; draft = {}; invalidate(); return render(); }
@@ -223,6 +228,7 @@
     if (!active() || busy) return;
     const node = event.target;
     if (node.id === 'hotel-registration-license' && ['register', 'license'].includes(mode)) { const file = node.files?.[0]; if (!file) return; licenseError = rules.businessLicenseError(file); if (!licenseError) draft.businessLicense = rules.licenseSelection(file); node.value = ''; return renderLicense(); }
+    if (node.name === 'groupId' && mode === 'register') { capture(); draft.brandId = ''; invalidate(); return render(); }
     if (node.name === 'provinceId' && mode === 'register') { capture(); const region = regions.findRegion(draft.provinceId); draft.cityId = region && ['municipality', 'special-administrative-region'].includes(region.type) ? region.cities[0].id : ''; invalidate(); return render(); }
   });
   document.addEventListener('input', event => { if (!active()) return; if (['phone', 'hrEmail', 'identifier'].includes(event.target.name)) { epoch++; invalidate('接收信息已修改，原模拟码已作废，请重新获取。'); } });

@@ -21,7 +21,9 @@
   const educationLevels = () => window.JiulvCore?.EDUCATION_LEVELS || [];
   const englishLevels = () => window.JiulvCore?.ENGLISH_LEVELS || [];
   const departments = () => window.JiulvCore?.DEPARTMENTS || [];
-  const optionalFields = new Set(['email', 'educationSummary', 'clubs']);
+  const optionalFields = new Set(['email', 'wechat', 'educationSummary', 'clubs']);
+  const availabilityChoices = ['可以', '不可以', '待确认'];
+  const choiceLabels = { conversionIntent: { '可衔接转正': '可以，愿意沟通留任', '仅实习': '不可以，仅实习', '待考虑': '待确认' } };
   const experienceLevels = ['有实习经历', '有兼职经历', '暂无相关经历'];
   const conversionIntents = ['可衔接转正', '仅实习', '待考虑'];
   const profileSignature = account => JSON.stringify(profileKeys.map(key => String(account?.[key] || '').trim()));
@@ -193,9 +195,9 @@
   const labels = {
     name: '姓名', gender: '性别', birthMonth: '出生年月', birthplace: '出生地',
     height: '身高（cm）', weight: '体重（kg）', school: '学校', major: '专业',
-    enrollment: '入学年月', graduation: '预计毕业年月', degree: '学历', educationSummary: '主修课程 / 学业表现', phone: '联系电话', email: '联系邮箱',
+    enrollment: '入学年月', graduation: '预计毕业年月', degree: '学历', educationSummary: '主修课程 / 学业表现', phone: '联系电话', email: '联系邮箱', wechat: '微信号',
     skills: '技能与证书', experience: '实习与兼职经历', clubs: '校园与社团经历',
-    intentionCities: '意向城市', intentionRoles: '意向岗位', experienceLevel: '相关经历', conversionIntent: '实习后转正意向', languages: '原外语说明', englishLevel: '外语能力（英语）', startDate: '原到岗日期', endDate: '原结束日期', startMonth: '最早开始年月', endMonth: '最晚结束年月', duration: '可实习周期', objective: '自我介绍'
+    intentionCities: '意向城市', intentionRoles: '意向岗位', experienceLevel: '相关经历', conversionIntent: '是否可留任', extensionIntent: '是否可延长实习', tripartiteIntent: '是否可签三方协议', languages: '原外语说明', englishLevel: '外语能力（英语）', startDate: '原到岗日期', endDate: '原结束日期', startMonth: '最早开始年月', endMonth: '最晚结束年月', duration: '可实习周期', objective: '自我介绍'
   };
   const fieldKeys = Object.keys(labels);
   const dateLabel = value => {
@@ -230,6 +232,7 @@
     // qualification. Their original wording survives later autosaves.
     if (!educationLevels().includes(clean.degree)) clean.degree = '';
     if (!englishLevels().includes(clean.englishLevel)) clean.englishLevel = '';
+    for (const key of ['extensionIntent', 'tripartiteIntent']) if (!availabilityChoices.includes(clean[key])) clean[key] = '待确认';
     clean.startMonth = monthValue(clean.startMonth || clean.startDate);
     clean.endMonth = monthValue(clean.endMonth || clean.endDate);
     const selected=citySelection(clean.intentionCities,data.intentionCityIds);
@@ -253,7 +256,7 @@
   function select(data, key, values, placeholder) {
     const original = key === 'degree' ? data.legacyDegree : key === 'englishLevel' ? [...new Set([data.legacyEnglishLevel, data.languages].filter(Boolean))].join('；') : '';
     const note = original && !data[key] ? `<small class="muted resume-field-hint">${key === 'degree' ? '已保留原学历' : '已保留你原来填写的外语说明'}：${e(original)}。请重新选择当前选项。</small>` : '';
-    return `<label class="field resume-field"><span>${e(labels[key])}${fieldMark(key)}</span><select name="${key}" required><option value="">${e(placeholder)}</option>${values.map(value=>`<option value="${e(value)}" ${data[key] === value ? 'selected' : ''}>${e(value)}</option>`).join('')}</select>${note}</label>`;
+    return `<label class="field resume-field"><span>${e(labels[key])}${fieldMark(key)}</span><select name="${key}" required><option value="">${e(placeholder)}</option>${values.map(value=>`<option value="${e(value)}" ${data[key] === value ? 'selected' : ''}>${e(choiceLabels[key]?.[value] || value)}</option>`).join('')}</select>${note}</label>`;
   }
   function selectedRoles(value) { return String(value || '').split(/[、,，;；]+/).map(value=>value.trim()).filter(value=>departments().includes(value)); }
   function rolePicker(data) {
@@ -270,6 +273,8 @@
     const check = (key, valid) => { if (String(values[key] || '').trim() && !valid) invalid.push(key); };
     check('phone', /^\+?\d{7,15}$/.test(String(data.phone || '').replace(/[\s()-]/g,'')));
     check('email', !data.email || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email));
+    check('wechat', !data.wechat || /^[a-zA-Z][a-zA-Z0-9_-]{5,63}$/.test(data.wechat));
+    for (const key of ['extensionIntent', 'tripartiteIntent']) check(key, availabilityChoices.includes(data[key]));
     check('height', Number(data.height)>0 && Number(data.height)<=300);
     check('weight', Number(data.weight)>0 && Number(data.weight)<=500);
     check('degree', educationLevels().includes(data.degree));
@@ -370,7 +375,7 @@
     const data = normalizeDraft(api().read(draftKey(account), {}), account);
     editableProfileAccountId = account.id;
     profileBaseline = profileSignature(account);
-    const basicProfile = `<fieldset><legend>01 · 个人信息</legend><p class="muted resume-field-hint">带 * 的项目需填写，未完成可先保存草稿。简历联系电话可独立填写，不会修改登录账号。</p><div class="grid resume-fields">${input(data, 'name', 'text', 'maxlength="40" autocomplete="name" placeholder="例：林星禾"')}${input(data, 'phone', 'tel', 'maxlength="24" autocomplete="tel" placeholder="例：13800000000"')}${input(data, 'email', 'email', 'maxlength="160" autocomplete="email" placeholder="例：student@example.com"')}${input(data, 'height', 'number', 'min="1" max="300" step="0.1" placeholder="例：168"')}${input(data, 'weight', 'number', 'min="1" max="500" step="0.1" placeholder="例：55"')}</div></fieldset><fieldset><legend>02 · 教育背景</legend><div class="grid resume-fields">${input(data, 'school', 'text', 'maxlength="100" placeholder="例：星河文旅学院"')}${input(data, 'major', 'text', 'maxlength="100" placeholder="例：酒店管理与数字化运营"')}${select(data,'degree',educationLevels(),'请选择学历')}${input(data, 'enrollment', 'month', 'min="1900-01"')}${input(data, 'graduation', 'month', 'min="1900-01"')}${textarea(data, 'educationSummary', '例：主修前厅服务、餐饮服务与酒店英语；获得校级奖学金。')}</div></fieldset>`;
+    const basicProfile = `<fieldset><legend>01 · 个人信息</legend><p class="muted resume-field-hint">带 * 的项目需填写，未完成可先保存草稿。简历联系电话可独立填写，不会修改登录账号。</p><div class="grid resume-fields">${input(data, 'name', 'text', 'maxlength="40" autocomplete="name" placeholder="例：林星禾"')}${input(data, 'phone', 'tel', 'maxlength="24" autocomplete="tel" placeholder="例：13800000000"')}${input(data, 'email', 'email', 'maxlength="160" autocomplete="email" placeholder="例：student@example.com"')}${input(data, 'wechat', 'text', 'maxlength="64" autocomplete="off" placeholder="例：my_wechat_id"')}${input(data, 'height', 'number', 'min="1" max="300" step="0.1" placeholder="例：168"')}${input(data, 'weight', 'number', 'min="1" max="500" step="0.1" placeholder="例：55"')}</div></fieldset><fieldset><legend>02 · 教育背景</legend><div class="grid resume-fields">${input(data, 'school', 'text', 'maxlength="100" placeholder="例：星河文旅学院"')}${input(data, 'major', 'text', 'maxlength="100" placeholder="例：酒店管理与数字化运营"')}${select(data,'degree',educationLevels(),'请选择学历')}${input(data, 'enrollment', 'month', 'min="1900-01"')}${input(data, 'graduation', 'month', 'min="1900-01"')}${textarea(data, 'educationSummary', '例：主修前厅服务、餐饮服务与酒店英语；获得校级奖学金。')}</div></fieldset>`;
     currentPhoto = data.photo;
     const intent = explicitIntent(account), referral = window.JiulvGrowth?.referral?.();
     if (intent && !intent.accountId) api().save('intent:v5', { ...intent, accountId: account.id });
@@ -384,8 +389,9 @@
       <fieldset><legend>03 · 实习意向</legend><p class="muted resume-field-hint">选择希望实习的时间、城市和部门。信息完整后可生成简历或申请岗位。</p><div class="grid resume-fields">
       ${input(data, 'startMonth', 'month', 'min="1900-01"')}${input(data, 'endMonth', 'month', 'min="1900-01"')}
       ${input(data, 'duration', 'text', 'maxlength="60" placeholder="例：6个月"')}<p class="muted resume-field-hint full" id="resume-duration-hint">${durationSuggestion(data.startMonth, data.endMonth) ? `按月份估算${e(durationSuggestion(data.startMonth, data.endMonth))}，可按学校要求调整。` : '选好开始和结束年月后会建议实习周期，可按学校要求调整。'}</p>
+      <div class="resume-availability-fields full">${select(data,'extensionIntent',availabilityChoices,'请选择是否可延长')}${select(data,'tripartiteIntent',availabilityChoices,'请选择是否可签三方协议')}${select(data,'conversionIntent',conversionIntents,'请选择留任意向')}</div><p class="muted resume-field-hint full">按目前情况选择，尚未确定可选“待确认”；最终安排由你、学校与酒店共同确认。</p>
       ${cityPicker(data)}${rolePicker(data)}
-      ${select(data,'experienceLevel',experienceLevels,'请选择经历情况')}${select(data,'conversionIntent',conversionIntents,'请选择转正意向')}
+      ${select(data,'experienceLevel',experienceLevels,'请选择经历情况')}
             </div></fieldset><fieldset><legend>04 · 实习与校园经历</legend><p class="muted resume-field-hint">从最近的经历开始写。没有实习或兼职经历，请在上方选择“暂无相关经历”，无需编造；校园活动单独填写。</p><div class="grid resume-fields">
       ${textarea(data, 'experience', '例：2026.05 - 2026.08 · 星湾酒店 · 前厅实习生\n协助迎宾、整理交接记录，学习确认宾客需求。')}
       ${textarea(data, 'clubs', '例：2025.09 - 2026.06 · 校园服务社 · 活动组成员\n参与开放日的报名整理、路线指引和轮班安排。')}
@@ -406,8 +412,8 @@
     if (window.JiulvResumeTemplate) return window.JiulvResumeTemplate.render(snapshot);
     const data = snapshot || {};
     const personal = [data.gender, data.birthMonth && `出生年月 ${data.birthMonth}`, approximateAge(data.birthMonth), data.birthplace && `出生地 ${data.birthplace}`, data.height && `身高 ${data.height} cm`, data.weight && `体重 ${data.weight} kg`].filter(Boolean);
-    const sections = [['意向城市与岗位', [data.intentionCities, data.intentionRoles].filter(Boolean).join(' · ')], ['相关经历与转正意向', [data.experienceLevel, data.conversionIntent].filter(Boolean).join(' · ')], ['实习意向', data.objective], ['兼职与实习经历', data.experience], ['社团与校园经历', data.clubs], ['外语能力', data.englishLevel || data.languages], ['技能与证书', data.skills]].filter(([, value]) => value);
-    return `<article class="resume-sheet"><header class="resume-sheet-header"><div><p class="resume-sheet-kicker">酒店与旅游 · 实习申请简历</p><h1>${e(data.name || '未填写姓名')}</h1><p class="resume-sheet-role">${e([data.school, data.major].filter(Boolean).join(' · '))}</p><p class="resume-sheet-contact">${e([data.phone, data.email].filter(Boolean).join(' / '))}</p></div>${validImage(data.photo) ? `<img class="resume-sheet-photo" src="${e(data.photo)}" alt="${e(data.name || '学生')}的头像">` : '<span class="resume-sheet-star" aria-hidden="true">✦</span>'}</header><div class="resume-sheet-plan"><div><span>可到岗时间</span><b>${e(monthValue(data.startMonth || data.startDate) || '待沟通')}${data.endMonth || data.endDate ? ` 至 ${e(monthValue(data.endMonth || data.endDate))}` : ''}</b></div><div><span>可实习周期</span><b>${e(data.duration || '待沟通')}</b></div><div><span>入学时间</span><b>${e(data.enrollment || '未填写')}</b></div></div>${personal.length ? `<p class="resume-sheet-personal">${e(personal.join(' · '))}</p>` : ''}<div class="resume-sheet-content">${sections.length ? sections.map(([label, value]) => `<section><h2>${label}</h2><p>${lines(value)}</p></section>`).join('') : '<section><h2>个人经历</h2><p>暂未填写相关经历，可在面试时进一步介绍。</p></section>'}</div><footer class="resume-sheet-footer"><span>由本人填写 · 内容真实性待接收方核实</span><span>酒旅之星 · ${e(data.version || '简历预览')}</span></footer></article>`;
+    const sections = [['意向城市与岗位', [data.intentionCities, data.intentionRoles].filter(Boolean).join(' · ')], ['可实习时间补充', [data.extensionIntent && `是否可延长实习：${data.extensionIntent}`, data.tripartiteIntent && `是否可签三方协议：${data.tripartiteIntent}`].filter(Boolean).join('；')], ['相关经历与留任意向', [data.experienceLevel, data.conversionIntent].filter(Boolean).join(' · ')], ['实习意向', data.objective], ['兼职与实习经历', data.experience], ['社团与校园经历', data.clubs], ['外语能力', data.englishLevel || data.languages], ['技能与证书', data.skills]].filter(([, value]) => value);
+    return `<article class="resume-sheet"><header class="resume-sheet-header"><div><p class="resume-sheet-kicker">酒店与旅游 · 实习申请简历</p><h1>${e(data.name || '未填写姓名')}</h1><p class="resume-sheet-role">${e([data.school, data.major].filter(Boolean).join(' · '))}</p><p class="resume-sheet-contact">${e((data.contactRedacted ? ['联系方式已隐藏'] : [data.phone, data.email, data.wechat ? `微信 ${data.wechat}` : '']).filter(Boolean).join(' / '))}</p></div>${validImage(data.photo) ? `<img class="resume-sheet-photo" src="${e(data.photo)}" alt="${e(data.name || '学生')}的头像">` : '<span class="resume-sheet-star" aria-hidden="true">✦</span>'}</header><div class="resume-sheet-plan"><div><span>可到岗时间</span><b>${e(monthValue(data.startMonth || data.startDate) || '待沟通')}${data.endMonth || data.endDate ? ` 至 ${e(monthValue(data.endMonth || data.endDate))}` : ''}</b></div><div><span>可实习周期</span><b>${e(data.duration || '待沟通')}</b></div><div><span>入学时间</span><b>${e(data.enrollment || '未填写')}</b></div></div>${personal.length ? `<p class="resume-sheet-personal">${e(personal.join(' · '))}</p>` : ''}<div class="resume-sheet-content">${sections.length ? sections.map(([label, value]) => `<section><h2>${label}</h2><p>${lines(value)}</p></section>`).join('') : '<section><h2>个人经历</h2><p>暂未填写相关经历，可在面试时进一步介绍。</p></section>'}</div><footer class="resume-sheet-footer"><span>由本人填写 · 内容真实性待接收方核实</span><span>酒旅之星 · ${e(data.version || '简历预览')}</span></footer></article>`;
   }
   const sheetStyles = `
     *{box-sizing:border-box}body{margin:0;background:#edf1ee;color:#243e38;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif;line-height:1.7}.resume-sheet{width:100%;max-width:800px;min-height:950px;margin:auto;background:#fff;padding:48px 52px;box-shadow:0 10px 40px #1233240d}.resume-sheet-header{display:flex;justify-content:space-between;gap:24px;padding-bottom:25px;border-bottom:3px solid #23594e}.resume-sheet-kicker{font-size:11px;letter-spacing:2px;margin:0 0 14px;color:#66867a}.resume-sheet h1{font-size:38px;letter-spacing:3px;line-height:1.3;margin:0 0 10px;overflow-wrap:anywhere}.resume-sheet-role,.resume-sheet-contact{font-size:13px;margin:5px 0;overflow-wrap:anywhere}.resume-sheet-photo{width:91px;height:122px;object-fit:cover;border-radius:3px;flex-shrink:0}.resume-sheet-star{font-size:67px;line-height:1.4;color:#b9965b}.resume-sheet-plan{display:grid;grid-template-columns:repeat(3,1fr);gap:15px;padding:21px 0;border-bottom:1px solid #dfe8e1}.resume-sheet-plan span{display:block;font-size:10px;letter-spacing:1px;color:#7d8c86}.resume-sheet-plan b{font-size:13px;font-weight:600;overflow-wrap:anywhere}.resume-sheet-personal{font-size:11px;color:#64746d;line-height:1.8;margin:18px 0 0}.resume-sheet-content{padding-top:6px}.resume-sheet-content section{margin-top:24px;break-inside:avoid}.resume-sheet-content h2{font-size:14px;letter-spacing:2px;margin:0 0 9px;display:flex;align-items:center;gap:12px}.resume-sheet-content h2:after{content:"";height:1px;background:#e3e9e4;flex:1}.resume-sheet-content p{font-size:13px;line-height:1.9;color:#3e534a;margin:0;overflow-wrap:anywhere}.resume-sheet-footer{border-top:1px solid #e3e9e4;display:flex;justify-content:space-between;gap:18px;font-size:9px;color:#89958e;margin-top:42px;padding-top:15px;overflow-wrap:anywhere}.resume-standalone-toolbar{max-width:800px;margin:20px auto;padding:0 15px;color:#52675e;font-size:12px}.resume-standalone-toolbar button{border:0;background:#25574b;color:white;padding:12px 20px;border-radius:8px;font:inherit;cursor:pointer;margin-right:15px}@media(max-width:600px){.resume-sheet{padding:30px 24px;min-height:800px}.resume-sheet h1{font-size:30px}.resume-sheet-photo{width:76px;height:102px}.resume-sheet-plan{gap:10px}.resume-sheet-plan b{font-size:12px}.resume-sheet-footer{flex-direction:column;gap:4px}}@page{size:A4;margin:15mm}@media print{body{background:white}.resume-standalone-toolbar{display:none!important}.resume-sheet{max-width:none;min-height:0;padding:0;box-shadow:none}.resume-sheet-header{break-inside:avoid}.resume-sheet-footer{break-inside:avoid}.resume-sheet-content section{break-inside:auto}.resume-sheet-content h2{break-after:avoid}.resume-sheet-plan{break-inside:avoid}.resume-sheet *{-webkit-print-color-adjust:exact;print-color-adjust:exact}}
@@ -484,7 +490,7 @@
     if (!account) return {};
     const saved = api().read(draftKey(account), {});
     const data = normalizeDraft(saved, account);
-    return window.JiulvOutreachCore?.studentContacts({ ...account, phone: data.phone, email: data.email }) || {};
+    return window.JiulvOutreachCore?.studentContacts({ ...account, phone: data.phone, email: data.email, wechat: data.wechat }) || {};
   }
   function getContactSnapshot(studentId) {
     const account = studentId ? (api().getAccounts?.().students || []).find(row => row.id === studentId) : api().getAccount();
@@ -576,7 +582,7 @@
     const roleField = directInput && availableRoles.length > 1 ? `<label class="field resume-field"><span>申请岗位 *</span><select name="position" id="resume-authorize-position" required><option value="">请选择本次申请的岗位</option>${availableRoles.map(role => `<option value="${e(role)}" ${role === position ? 'selected' : ''}>${e(role)}</option>`).join('')}</select></label>` : '';
     const questionField = directInput ? `<label class="field resume-field"><span>想向酒店确认的问题 <small>选填</small></span><textarea name="question" rows="2" maxlength="1000" placeholder="例：报到当天可以先办理宿舍入住吗？">${e(question)}</textarea></label>` : '';
     const missingTime = directInput && !timing.ok ? `<div class="notice resume-demo-notice"><span>${e(timing.error)}</span><button class="secondary" type="button" data-resume-action="edit-application">补齐实习时间</button></div>` : '';
-    api().modal(`<h2 id="modal-title">${directInput ? '核对简历，申请岗位' : '确认这一次投递授权'}</h2><dl class="resume-authorize-summary"><div><dt>接收酒店</dt><dd>${e(job.name)}</dd></div><div><dt>申请岗位</dt><dd>${e(position || '在下方选择')}</dd></div><div><dt>投递方式</dt><dd>酒旅之星企业邮箱代投递 · 当前为演示</dd></div><div><dt>简历版本</dt><dd>${e(snapshot.version)}</dd></div></dl><p class="muted resume-modal-intro">${directInput ? '已使用你最新保存的简历，核对无误即可申请；如需调整，点击“修改简历”。' : '以下就是本次可向这家酒店展示的简历。'}联系方式已隐藏，本次申请保留你核对的版本。</p>${missingTime}<div class="resume-preview">${resumeDocument(snapshot)}</div>${question && !directInput ? `<div class="ow-question"><b>随投递附带的问题</b><span>${e(question)}</span></div>` : ''}<section class="notice resume-demo-notice"><div><b>酒店筛选通过后，才开放面试联系</b><p>${hasContact ? `仅向 ${e(job.name)} 的对应酒店账号开放：${e([contactSnapshot.phone, contactSnapshot.email].filter(Boolean).join(" / "))}。其他酒店无法通过这份申请获得联系方式。` : "当前简历尚无可用的电话或邮箱。你仍可先投递；在简历中补充后，再到申请进度单独授权共享。"}</p></div></section><form id="resume-authorize-form" ${directInput ? 'data-direct-application="true"' : ''}>${roleField}<div id="resume-transfer-choice">${transferChoice(pendingTransferOptions, restoreTransfer)}</div>${questionField}<label class="resume-consent"><input name="consent" type="checkbox" required><span>我已核对上方内容，单独授权酒旅之星向 <b>${e(job.name)}</b> 提供本次脱敏简历摘要和问题。${hasContact ? "该酒店确认简历筛选通过后，我同意仅向其对应账号开放上方联系方式，用于本次面试联系。" : "此次不共享联系方式。"}我了解当前仅本机模拟，没有实际发送邮件。</span></label><div class="actions resume-preview-actions"><button class="primary" type="submit" ${directInput && !timing.ok ? 'disabled' : ''}>${directInput ? '确认申请（本机演示）' : '确认投递授权（本机演示）'}</button><button class="secondary" type="button" data-resume-action="${directInput ? 'edit-application' : 'delivery'}">${directInput ? '修改简历' : '返回修改'}</button></div></form>`, 'REVIEW BEFORE SHARING / 确认接收对象');
+    api().modal(`<h2 id="modal-title">${directInput ? '核对简历，申请岗位' : '确认这一次投递授权'}</h2><dl class="resume-authorize-summary"><div><dt>接收酒店</dt><dd>${e(job.name)}</dd></div><div><dt>申请岗位</dt><dd>${e(position || '在下方选择')}</dd></div><div><dt>投递方式</dt><dd>酒旅之星企业邮箱代投递 · 当前为演示</dd></div><div><dt>简历版本</dt><dd>${e(snapshot.version)}</dd></div></dl><p class="muted resume-modal-intro">${directInput ? '已使用你最新保存的简历，核对无误即可申请；如需调整，点击“修改简历”。' : '以下就是本次可向这家酒店展示的简历。'}联系方式已隐藏，本次申请保留你核对的版本。</p>${missingTime}<div class="resume-preview">${resumeDocument(snapshot)}</div>${question && !directInput ? `<div class="ow-question"><b>随投递附带的问题</b><span>${e(question)}</span></div>` : ''}<section class="notice resume-demo-notice"><div><b>酒店筛选通过后，才开放面试联系</b><p>${hasContact ? `仅向 ${e(job.name)} 的对应酒店账号开放：${e([contactSnapshot.phone, contactSnapshot.email, contactSnapshot.wechat ? `微信 ${contactSnapshot.wechat}` : ''].filter(Boolean).join(" / "))}。其他酒店无法通过这份申请获得联系方式。` : "当前简历尚无可用的电话或邮箱。你仍可先投递；在简历中补充后，再到申请进度单独授权共享。"}</p></div></section><form id="resume-authorize-form" ${directInput ? 'data-direct-application="true"' : ''}>${roleField}<div id="resume-transfer-choice">${transferChoice(pendingTransferOptions, restoreTransfer)}</div>${questionField}<label class="resume-consent"><input name="consent" type="checkbox" required><span>我已核对上方内容，单独授权酒旅之星向 <b>${e(job.name)}</b> 提供本次脱敏简历摘要和问题。${hasContact ? "该酒店确认简历筛选通过后，我同意仅向其对应账号开放上方联系方式，用于本次面试联系。" : "此次不共享联系方式。"}我了解当前仅本机模拟，没有实际发送邮件。</span></label><div class="actions resume-preview-actions"><button class="primary" type="submit" ${directInput && !timing.ok ? 'disabled' : ''}>${directInput ? '确认申请（本机演示）' : '确认投递授权（本机演示）'}</button><button class="secondary" type="button" data-resume-action="${directInput ? 'edit-application' : 'delivery'}">${directInput ? '修改简历' : '返回修改'}</button></div></form>`, 'REVIEW BEFORE SHARING / 确认接收对象');
   }
   function authorize() {
     const account = api().getAccount();
@@ -614,7 +620,7 @@
       if (!current || Number(current.revision) !== Number(pendingDelivery.planRevision)) { const jobId = pendingDelivery.jobId; pendingDelivery = null; api().toast('这份招聘计划已更新或暂停，请返回重新选择并核对。'); return authorizeForm?.dataset?.directApplication === 'true' ? applyToJob(jobId) : deliveryForm(); }
     }
     const stored = api().read('deliveries:v5', []), records = Array.isArray(stored) ? stored : [];
-    const record = { ...pendingDelivery, contactConsent: Object.keys(pendingDelivery.contactSnapshot || {}).length > 0, id: `delivery-${crypto.randomUUID()}`, status: 'demo-authorized-v5', createdAt: new Date().toISOString() };
+    const record = { ...pendingDelivery, contactFields: Object.keys(pendingDelivery.contactSnapshot || {}), contactConsent: Object.keys(pendingDelivery.contactSnapshot || {}).length > 0, id: `delivery-${crypto.randomUUID()}`, status: 'demo-authorized-v5', createdAt: new Date().toISOString() };
     if (!api().save('deliveries:v5', [...records, record])) return;
     pendingDelivery = null; applicationTarget = null;
     let workflowResult;
@@ -631,7 +637,7 @@
     const sample = {
       name: '林星禾（虚构示例）', gender: '不愿透露', birthMonth: `${year - 21}-05`, birthplace: '浙江杭州', height: '168', weight: '55',
       school: '星河文旅学院（虚构）', major: '酒店管理与数字化运营', enrollment: `${year - 3}-09`,
-      phone: api().getAccount()?.phone || '13800000000', email: 'student@example.invalid', degree: '高职 / 专科', graduation: `${year + 1}-06`, educationSummary: '主修课程：前厅服务与管理、餐饮服务、酒店英语。\n课程实践：完成餐饮摆台与宾客接待情景实训。', intentionCities: '上海、杭州', intentionRoles: '前厅、餐饮', experienceLevel: '有实习经历', conversionIntent: '待考虑',
+      phone: api().getAccount()?.phone || '13800000000', email: 'student@example.invalid', wechat: '', extensionIntent: '待确认', tripartiteIntent: '待确认', degree: '高职 / 专科', graduation: `${year + 1}-06`, educationSummary: '主修课程：前厅服务与管理、餐饮服务、酒店英语。\n课程实践：完成餐饮摆台与宾客接待情景实训。', intentionCities: '上海、杭州', intentionRoles: '前厅、餐饮', experienceLevel: '有实习经历', conversionIntent: '待考虑',
       englishLevel: englishLevels()[0] || '', languages: '',
       skills: '服务技能：迎宾引位、餐前布置、宾客需求记录与交接。\n办公技能：使用 Excel 整理物品清单和活动报名信息。\n未填写技能证书；所有内容均为虚构示例。',
       experience: `${year}.05 - ${year}.08 · 星湾湖畔酒店（虚构） · 行政酒廊实习生\n• 协助迎宾引位、茶歇补给和餐后整理，保持服务区域有序。\n• 整理会议室与欢迎物品，记录宾客需求并交接给负责同事。\n\n${year - 1}.07 - ${year - 1}.09 · 星港花园酒店（虚构） · 全日制餐厅实习生\n• 完成开餐前摆台、用餐引导及餐具补充，配合团队做好收餐。\n• 协助核对餐品与客房送餐用品，学习复述确认宾客需求。`,
@@ -640,7 +646,7 @@
       objective: '意向前厅或餐饮部门，希望在已有服务实践的基础上，进一步学习宾客接待与跨部门协作。做事习惯先确认需求、再记录与交接。\n本简历全部内容为虚构样例，请替换为真实经历后使用。'
     };
     const existing = draftFromForm() || {};
-    fieldKeys.forEach(key => { const control = form.elements.namedItem(key); if (control) control.value = (profileKeys.includes(key) || ['phone','email'].includes(key)) && existing[key] ? existing[key] : sample[key] || ''; });
+    fieldKeys.forEach(key => { const control = form.elements.namedItem(key); if (control) control.value = (profileKeys.includes(key) || ['phone','email','wechat'].includes(key)) && existing[key] ? existing[key] : sample[key] || ''; });
     if(regionDirectory())updateCitySelection(citySelection(sample.intentionCities).ids);
     form.querySelectorAll('[data-resume-role]').forEach(control=>{control.checked=selectedRoles(sample.intentionRoles).includes(control.dataset.resumeRole);});
     invalidatePhotoRead(); currentPhoto = existing.photo || currentPhoto; updatePhoto();

@@ -3,6 +3,8 @@
  * EDITION is a white transparent wordmark and needs a dark background.
  * The links identify hotels; they do not imply a partnership with this demo.
  */
+(function (root) {
+const window = root;
 window.JIULV_BRANDS = Object.freeze({
   regent: Object.freeze({
     groupId: 'ihg', brandId: 'regent',
@@ -479,7 +481,7 @@ window.JIULV_HOTEL_GROUPS = [
       },
       {
         "id": "thompson",
-        "name": "汤普森",
+        "name": "桐森",
         "english": "Thompson Hotels",
         "category": "奢华与生活方式",
         "intro": "结合文化、餐饮与鲜明的城市设计风格。",
@@ -772,7 +774,7 @@ window.JIULV_HOTEL_GROUPS = [
       },
       {
         "id": "vignette",
-        "name": "Vignette Collection",
+        "name": "洲至奢选",
         "english": "Vignette Collection",
         "category": "奢华与生活方式",
         "intro": "汇集具有独立个性的高端酒店。",
@@ -2387,3 +2389,90 @@ window.JIULV_HOTEL_GROUPS = [
     "logoNotes": "朗廷母公司鹰君集团官网旗下业务品牌矩阵原图；未修改图像。"
   }
 ];
+
+/* First surveyed Shanghai resource pool, checked 2026-10-16.
+ * A catalog entry identifies a group / operating brand family, not a recruiting
+ * partnership, account verification, or current vacancy. Unavailable logos use
+ * the existing text-name fallback; no invented logo artwork is supplied. */
+(function () {
+  const checkedAt = '2026-10-16';
+  const additions = [
+    {
+      id: 'radisson', name: '丽笙酒店集团', english: 'Radisson Hotel Group', region: '国际集团',
+      officialUrl: 'https://www.radissonhotels.com/', sourceUrl: 'https://www.radissonhotels.com/en-us/corporate/about-us/our-brands',
+      intro: '以丽笙精选、丽笙等不同品牌服务城市与度假旅客。图鉴按酒店实际使用的品牌体系收录，便于识别具体酒店。',
+      focus: '丽笙精选与 Radisson Blu 是不同品牌；了解具体酒店的服务场景，再比较实习条件。',
+      brands: [
+        { id: 'radisson-collection', name: '丽笙精选', english: 'Radisson Collection', category: '奢华与生活方式', intro: '汇集具有当地特色、重视设计与餐饮体验的酒店。', officialUrl: 'https://www.radissonhotels.com/en-us/brand/radisson-collection' },
+        { id: 'radisson-blu', name: '丽笙', english: 'Radisson Blu', category: '全服务与高端', intro: '以当代设计与全服务酒店体验接待商务及休闲旅客。', officialUrl: 'https://www.radissonhotels.com/en-us/brand/radisson-blu' }
+      ]
+    },
+    {
+      id: 'puli', name: '璞丽酒店集团', english: 'The PuLi Group', region: '中国集团',
+      officialUrl: 'https://thepuli.com/en/', sourceUrl: 'https://thepuli.com/en/',
+      intro: '当前官网使用 The PuLi Group 名称，以东方审美、设计与都市度假体验为特色。较早官方资料中的 Urban Resort Concepts（URC）保留为历史管理名称。',
+      focus: '从酒店实际的餐饮、客房与康养服务认识岗位，不将品牌风格等同于员工待遇。',
+      brands: [{ id: 'puli', name: '璞丽', english: 'The PuLi', category: '奢华与生活方式', intro: '以东方美学、克制设计与都市休憩体验为特色，上海璞丽是代表酒店。', officialUrl: 'https://thepuli.com/shanghai/en/' }]
+    },
+    {
+      id: 'sukhothai', name: '素凯泰酒店及度假村', english: 'The Sukhothai Hotels & Resorts', region: '国际集团',
+      officialUrl: 'https://www.sukhothai.com/', sourceUrl: 'https://www.sukhothai.com/',
+      intro: '素凯泰酒店及度假村的酒店结合目的地文化与当代设计，官网分别介绍曼谷与上海酒店。',
+      focus: '同一品牌在不同城市的服务与岗位设置可能不同，按单体酒店确认带教和实习安排。',
+      brands: [{ id: 'sukhothai', name: '素凯泰', english: 'The Sukhothai', category: '奢华与生活方式', intro: '结合设计、餐饮与个性化服务的酒店品牌。', officialUrl: 'https://www.sukhothai.com/' }]
+    },
+    {
+      id: 'banyan', name: '悦榕集团', english: 'Banyan Group', region: '国际集团',
+      officialUrl: 'https://www.groupbanyan.com/', sourceUrl: 'https://www.groupbanyan.com/our-brands',
+      intro: '悦榕集团的酒店品牌重视目的地文化、自然体验与康养。此处先收录首批酒店资源涉及的悦榕庄品牌。',
+      focus: '城市酒店与度假酒店的工作节奏不同，关注具体部门、班次与实习生生活安排。',
+      brands: [{ id: 'banyan-tree', name: '悦榕庄', english: 'Banyan Tree', category: '奢华与生活方式', intro: '以设计、自然与康养体验为特色，覆盖城市休憩与度假场景。', officialUrl: 'https://www.banyantree.com/' }]
+    },
+    {
+      id: 'artyzen', name: '雅辰酒店集团', english: 'Artyzen Hospitality Group', region: '中国集团',
+      officialUrl: 'https://www.artyzen.com/sc/', sourceUrl: 'https://www.artyzen.com/sc/',
+      intro: '雅辰以文化、艺术与目的地生活方式打造酒店体验。雅辰和雅辰悦居为不同品牌，名称使用官网的“雅辰”。',
+      focus: '了解餐饮、客房与活动空间如何协作，再确认自己所在部门的日常工作。',
+      brands: [
+        { id: 'artyzen', name: '雅辰', english: 'Artyzen', category: '奢华与生活方式', intro: '结合目的地艺术文化、精致设计与当代生活方式。', officialUrl: 'https://www.artyzen.com/sc/' },
+        { id: 'artyzen-habitat', name: '雅辰悦居', english: 'Artyzen Habitat', category: '全服务与高端', intro: '将居住、社交与当地文化融入城市酒店体验。', officialUrl: 'https://www.artyzen.com/sc/' }
+      ]
+    },
+    {
+      id: 'shangri-la', name: '香格里拉集团', english: 'Shangri-La Group', region: '中国集团',
+      officialUrl: 'https://www.shangri-la.com/group/', sourceUrl: 'https://www.shangri-la.com/group/',
+      intro: '香格里拉集团的酒店服务涵盖城市商务、餐饮会务与休闲度假。此处先收录首批资源涉及的香格里拉品牌。',
+      focus: '同品牌酒店的部门规模与客群不同，具体实习岗位和带教安排由单体酒店确认。',
+      brands: [{ id: 'shangri-la', name: '香格里拉', english: 'Shangri-La', category: '奢华与生活方式', intro: '以亚洲待客传统为特色的奢华酒店与度假品牌。', officialUrl: 'https://www.shangri-la.com/' }]
+    },
+    {
+      id: 'melia', name: '美利亚酒店集团', english: 'Meliá Hotels International', region: '国际集团',
+      officialUrl: 'https://www.meliahotelsinternational.com/', sourceUrl: 'https://www.melia.com/en/brands',
+      intro: '美利亚酒店集团的品牌覆盖城市、休闲度假与生活方式等场景。美利亚是集团旗下的一个品牌。',
+      focus: '先看城市与酒店客群，再了解餐饮、客房与宾客服务的实习内容。',
+      brands: [{ id: 'melia', name: '美利亚', english: 'Meliá Hotels & Resorts', category: '全服务与高端', intro: '面向商务与休闲旅客，结合舒适住宿、餐饮及目的地体验。', officialUrl: 'https://www.melia.com/en/brands' }]
+    },
+    {
+      id: 'plaza-premium', name: '环亚集团', english: 'Plaza Premium Group', region: '国际集团',
+      officialUrl: 'https://www.plazapremiumgroup.com/', sourceUrl: 'https://www.plazapremiumgroup.com/plaza-premium-groups-aerotel-shanghai-now-open-at-pudong-international-airport/',
+      intro: '环亚集团提供机场旅客服务，旗下遨途酒店专注机场住宿。上海酒店位于浦东机场航站楼。',
+      focus: '机场酒店要重点确认轮班、交通、通行要求与实习生休息安排。',
+      brands: [{ id: 'aerotel', name: '遨途', english: 'Aerotel', category: '精选与商务', intro: '面向机场出发、抵达与中转旅客，提供灵活住宿和休憩服务。', officialUrl: 'https://www.myaerotel.com/en-uk' }]
+    }
+  ];
+  for (const group of additions) {
+    group.verifiedAt = checkedAt;
+    group.featured = group.brands.map(brand => brand.id);
+    group.brands = group.brands.map(brand => ({ ...brand, groupId: group.id, sourceUrl: group.sourceUrl, verifiedAt: checkedAt }));
+    window.JIULV_HOTEL_GROUPS.push(group);
+  }
+  for (const [groupId, brandId, sourceUrl] of [
+    ['hyatt', 'thompson', 'https://www.hyatt.com/thompson-hotels/zh-HK/shath-thompson-shanghai-expo'],
+    ['ihg', 'vignette', 'https://www.ihg.com/vignettecollection/hotels/gb/en/shanghai/shaos/hoteldetail']
+  ]) {
+    const brand = window.JIULV_HOTEL_GROUPS.find(group => group.id === groupId)?.brands.find(item => item.id === brandId);
+    if (brand) { brand.sourceUrl = sourceUrl; brand.verifiedAt = checkedAt; }
+  }
+})();
+if (typeof module !== 'undefined' && module.exports) module.exports = { groups: window.JIULV_HOTEL_GROUPS, legacy: window.JIULV_BRANDS };
+})(typeof window !== 'undefined' ? window : {});

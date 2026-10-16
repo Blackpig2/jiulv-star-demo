@@ -69,11 +69,13 @@
     const result = jobs.filter(job => (!cities.length || cities.some(city => sameCity(job.city, city)))
       && (!departments.length || departments.some(value => (job.departments || []).some(department => normalizeDepartment(department) === normalizeDepartment(value))))
       && (!groups.length || groups.includes(job.groupId))
-      && (!query || normalize([job.name, job.english, job.role, job.city, job.district, job.groupName, job.brandName, ...(job.departments || []), ...(job.departments || []).map(normalizeDepartment)].join(' ')).includes(query)));
+      && (!query || normalize([job.name, job.english, job.role, job.city, job.district, job.groupName, job.brandName, ...(job.aliases || []), ...(job.departments || []), ...(job.departments || []).map(normalizeDepartment)].join(' ')).includes(query)));
     // registeredHotel is supplied only after the calling catalog checks the account
     // and its published snapshot. A plan ID alone is never evidence of registration.
     return result.map((job, index) => ({ job, index, completeness: jobCompleteness(job) }))
-      .sort((a, b) => Number(b.job.registeredHotel === true) - Number(a.job.registeredHotel === true)
+      .sort((a, b) => Number(b.job.resourcePool === true) - Number(a.job.resourcePool === true)
+        || (a.job.resourcePool && b.job.resourcePool ? a.index - b.index : 0)
+        || Number(b.job.registeredHotel === true) - Number(a.job.registeredHotel === true)
         || b.completeness - a.completeness || a.index - b.index).map(item => item.job);
   }
   function toggleCompare(ids, id, max = 3) {

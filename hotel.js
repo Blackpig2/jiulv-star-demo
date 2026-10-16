@@ -130,6 +130,7 @@
     plan.department = String(source.department || departments().find(department => plan.role.includes(department)) || (/销售/.test(plan.role) ? '市场销售' : '')).slice(0,40);
     if (source.schedulePrecision === 'month' || Object.hasOwn(source, 'startMonth')) Object.assign(plan, catalog()?.scheduleOf(source) || source);
     plan.groupId = account.groupId || plan.groupId;
+    plan.brandId = Object.hasOwn(account, 'brandId') ? account.brandId : plan.brandId;
     const snapshot = catalog()?.normalizeSnapshot(source.publication?.snapshot);
     if (snapshot && snapshot.planId === plan.id && snapshot.hotelAccountId === account.id && ['published', 'paused', 'closed'].includes(source.publication.state)) plan.publication = { state: source.publication.state, snapshot, updatedAt: String(source.publication.updatedAt || '') };
     return plan;
@@ -195,6 +196,7 @@
       editor.plan.name = [editor.plan.startMonth, editor.plan.department ? `${editor.plan.department}实习计划` : '新实习计划'].filter(Boolean).join(' ');
       Object.assign(editor.plan, catalog().scheduleOf({...editor.plan,schedulePrecision:'month'}));
     }
+    editor.plan.brandId = Object.hasOwn(api().getHotelAccount(), 'brandId') ? api().getHotelAccount().brandId : editor.plan.brandId;
     editor.plan.groupId = api().getHotelAccount().groupId || (window.JIULV_HOTEL_GROUPS || []).find(group => group.brands.some(brand => brand.id === editor.plan.brandId))?.id || editor.plan.groupId || '';
     Object.keys(baseLabels).forEach(key => editor.plan.conditions.values[key] = api().getHotelAccount()[key] || '');
     drafts.set(editor.plan.id, editor); return true;

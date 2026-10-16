@@ -51,7 +51,7 @@
     return snapshot;
   }
   function makeSnapshot(plan, account, now = new Date().toISOString()) {
-    return normalizeSnapshot({ ...plan, planId: plan.id, planRevision: plan.revision, hotelAccountId: account.id, hotelId: account.hotelId || account.id, hotelName: account.hotelName, hotelCity: account.hotelCity, groupId: account.groupId || plan.groupId, publishedAt: now });
+    return normalizeSnapshot({ ...plan, planId: plan.id, planRevision: plan.revision, hotelAccountId: account.id, hotelId: account.hotelId || account.id, hotelName: account.hotelName, hotelCity: account.hotelCity, groupId: account.groupId || plan.groupId, brandId: Object.hasOwn(account, 'brandId') ? account.brandId : plan.brandId, publishedAt: now });
   }
   function publicationError(plan, account) {
     if (!account?.id || !text(account.hotelName) || !text(account.hotelCity)) return '酒店名称或城市待补全，请联系酒旅之星协助修改账户资料。';
@@ -97,7 +97,7 @@
   function toJob(snapshot, groups = []) {
     const snap = normalizeSnapshot(snapshot); if (!snap) return null;
     const v = snap.conditions.values, simple = snap.conditions.formVersion === SIMPLE_FORM_VERSION, known = value => value || '待确认';
-    const group = groups.find(g => g.id === snap.groupId) || groups.find(g => g.brands?.some(b => b.id === snap.brandId));
+    const group = groups.find(g => g.id === snap.groupId) || (!snap.groupId ? groups.find(g => g.brands?.some(b => b.id === snap.brandId)) : null);
     const brand = group?.brands?.find(b => b.id === snap.brandId);
     const amount = simple ? allowanceAmount(v.stipendFirst6) : v.stipend !== undefined && v.stipend !== '' && Number.isFinite(Number(v.stipend)) ? Number(v.stipend) : null;
     const district = snap.hotelCity.split(/[·,，/\s]+/).map(x => x.trim()), city = (district[0] || snap.hotelCity).replace(/市$/, '');

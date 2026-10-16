@@ -1,6 +1,7 @@
 /* 酒旅之星 H5 演示：静态资料 + 本机收藏和意向，不向服务器提交个人信息。 */
 'use strict';
-const publicJobs = window.JIULV_JOBS || [];
+const resourcePool = window.JIULV_HOTEL_RESOURCES;
+const publicJobs = resourcePool?.combineJobs ? resourcePool.combineJobs(window.JIULV_JOBS || []) : window.JIULV_JOBS || [];
 let jobs = [...publicJobs];
 function syncPublishedJobs() {
   const hotels = window.JiulvDemo?.getAccounts?.().hotels || [];
@@ -21,7 +22,7 @@ const storageKey = 'jiulv:v1:';
 // Published plans load after the static catalog, and a paused plan may return.
 // Keep saved identities even when an opportunity is not currently displayed.
 const storedFavorites = read(storageKey + 'favorites', []);
-let favorites = [...new Set((Array.isArray(storedFavorites) ? storedFavorites : []).filter(id => typeof id === 'string' && id.length > 0 && id.length <= 300))];
+let favorites = [...new Set((Array.isArray(storedFavorites) ? storedFavorites : []).filter(id => typeof id === 'string' && id.length > 0 && id.length <= 300).map(id => resourcePool?.records?.find(job => job.supersedesJobIds?.includes(id))?.id || id))];
 let comparisons = [];
 let currentView = 'roles';
 let activeJob = null;
@@ -35,10 +36,10 @@ function jobBrand(job) {
   const legacy = window.JIULV_BRANDS?.[job.id];
   const group = window.JIULV_HOTEL_GROUPS?.find(g => g.id === (job.groupId || legacy?.groupId));
   const brand = group?.brands.find(b => b.id === (job.brandId || legacy?.brandId));
-  return { ...brand, ...legacy, group: group?.name || legacy?.group || job.groupName || '', brand: brand?.name || legacy?.brand || job.brandName || '',
+  return { ...brand, ...legacy, group: group?.name || legacy?.group || job.groupName || (job.groupId === 'independent' ? '独立酒店 / 待核实' : ''), brand: brand?.name || legacy?.brand || job.brandName || '',
     groupId: group?.id || job.groupId, brandId: brand?.id || job.brandId,
-    officialUrl: job.hotelOfficialUrl || legacy?.officialUrl || brand?.officialUrl,
-    isHotelLink: Boolean(job.hotelOfficialUrl || legacy?.officialUrl) };
+    officialUrl: job.hotelOfficialUrl || (job.resourcePool ? job.officialUrl : '') || legacy?.officialUrl || brand?.officialUrl,
+    isHotelLink: Boolean(job.hotelOfficialUrl || (job.resourcePool && job.officialUrl) || legacy?.officialUrl) };
 }
 function filterOptions(key) {
   if (key === 'cities') return (window.JiulvRegions?.regions || []).flatMap(region => region.cities.map(city => [city.label, city.label]));
@@ -135,7 +136,7 @@ const money = value => new Intl.NumberFormat('zh-CN').format(value);
 const salaryText = job => !Number.isFinite(job.salaryMin) ? '津贴待确认' : job.salaryMin === job.salaryMax ? money(job.salaryMin) : `${money(job.salaryMin)}–${money(job.salaryMax)}`;
 const salaryUnit = job => Number.isFinite(job.salaryMin) ? '元/月' : '';
 const hasAllowancePhases = job => Array.isArray(job.allowancePhases) && job.allowancePhases.length === 2;
-const phaseAmount = phase => Number.isFinite(phase.amount) ? `${money(phase.amount)} 元/月` : '待确认';
+const phaseAmount = phase => phase.displayText || (Number.isFinite(phase.amount) ? `${money(phase.amount)} 元/月` : '待确认');
 function allowanceText(job) {
   return hasAllowancePhases(job) ? job.allowancePhases.map(phase => `${phase.label}：${phaseAmount(phase)}`).join('；') : `${salaryText(job)} ${salaryUnit(job)}`.trim();
 }
@@ -144,7 +145,7 @@ function allowanceCardHTML(job) {
 }
 
 const unknown = value => value === '待确认';
-const evidenceLabel = job => job.planId ? '酒店发布 · 本机演示' : job.evidenceStatus === '检索摘要' ? '检索线索 · 待复核' : '公开岗位 · 待确认';
+const evidenceLabel = job => job.resourcePool ? '首批酒店资源 · 2027年调研' : job.planId ? '酒店发布 · 本机演示' : job.evidenceStatus === '检索摘要' ? '检索线索 · 待复核' : '公开岗位 · 待确认';
 function toast(message) {
   clearTimeout(toastTimer); $('#toast').textContent = message; $('#toast').classList.add('visible');
   toastTimer = setTimeout(() => $('#toast').classList.remove('visible'), 3300);
@@ -154,9 +155,15 @@ function saveLocal(key, value) {
   catch { toast('当前浏览器无法保存数据，请检查隐私或存储设置。'); return false; }
 }
 function facts(job) {
+  if (job.resourcePool) return [['宿舍人数', job.dorm], ['额外补贴', job.details?.extraAllowance || '待确认'], ['通勤', job.commute], ['酒店班车', job.details?.shuttle || '待确认']];
   return [['住宿', job.dorm], ['餐食', job.meals], ['通勤', job.commute], ['轮岗', job.rotation]];
 }
+function resourceCard(job) {
+  const saved = favorites.includes(job.id), compared = comparisons.includes(job.id);
+  return `<article class="job-card resource-card" data-job="${escapeHTML(job.id)}"><div class="resource-card-kicker"><span>首批酒店资源</span><small>2027年实习计划调查</small></div><div class="job-top">${hotelBrandMark(job)}<div class="job-title"><h3>${escapeHTML(job.name)}</h3><small>${escapeHTML(jobBrand(job).brand || job.brandName || '品牌待核实')}</small><p class="job-location">⌖ ${escapeHTML(cityLabel(job.city))}</p><div class="job-brand-line"><span>${escapeHTML(jobBrand(job).group)}</span>${hotelWebsite(job)}</div></div><button class="save-button ${saved ? 'saved' : ''}" data-action="favorite" data-id="${escapeHTML(job.id)}" aria-label="${saved ? '取消收藏' : '收藏'}${escapeHTML(job.name)}" aria-pressed="${saved}">${saved ? '♥' : '♡'}</button></div><div class="resource-card-allowance"><span>计划基础津贴</span>${allowanceCardHTML(job)}</div><dl class="facts">${facts(job).map(([label,value]) => `<div class="fact"><dt>${escapeHTML(label)}</dt><dd class="${unknown(value) ? 'unknown' : ''}">${escapeHTML(value)}</dd></div>`).join('')}</dl><div class="job-card-bottom"><p class="source-status"><i></i>岗位与到岗时间待酒店确认<br>可先收藏、比较实习条件</p><div class="card-actions"><button class="compare-toggle ${compared ? 'selected' : ''}" data-action="toggle-compare" data-id="${escapeHTML(job.id)}" aria-pressed="${compared}">${compared ? '✓ 已加入' : '＋ 对比'}</button><button class="detail-button" data-action="detail" data-id="${escapeHTML(job.id)}">了解这家酒店 ↗</button></div></div></article>`;
+}
 function card(job) {
+  if (job.resourcePool) return resourceCard(job);
   const saved = favorites.includes(job.id), compared = comparisons.includes(job.id);
   return `<article class="job-card" data-job="${escapeHTML(job.id)}"><div class="job-top">${hotelBrandMark(job)}<div class="job-title"><h3>${escapeHTML(job.name)}</h3><small>${escapeHTML(job.english || jobBrand(job).brand)}</small><p class="job-location">⌖ ${escapeHTML(cityLabel(job.city))}</p><div class="job-brand-line"><span>${escapeHTML(jobBrand(job).group)}</span>${hotelWebsite(job)}</div></div><button class="save-button ${saved ? 'saved' : ''}" data-action="favorite" data-id="${escapeHTML(job.id)}" aria-label="${saved ? '取消收藏' : '收藏'}${escapeHTML(job.name)}" aria-pressed="${saved}">${saved ? '♥' : '♡'}</button></div><div class="role-line"><h4>${escapeHTML(job.role)}</h4>${allowanceCardHTML(job)}</div><div class="job-tags"><span>${escapeHTML(job.duration)}</span><span>${escapeHTML(job.education)}</span>${job.departments.slice(0, 3).map(dept => `<span>${escapeHTML(departmentLabel(dept))}</span>`).join('')}</div><dl class="facts">${facts(job).map(([label, value]) => `<div class="fact"><dt>${label}</dt><dd class="${unknown(value) ? 'unknown' : ''}">${escapeHTML(value)}</dd></div>`).join('')}</dl><div class="job-card-bottom"><p class="source-status"><i></i>${evidenceLabel(job)}<br>${job.planId?'按本次发布条件展示':'未经酒店核验'}</p><div class="card-actions"><button class="compare-toggle ${compared ? 'selected' : ''}" data-action="toggle-compare" data-id="${escapeHTML(job.id)}" aria-pressed="${compared}" aria-label="${compared ? '移出对比' : '加入对比'}${escapeHTML(job.name)}">${compared ? '✓ 已加入' : '＋ 对比'}</button><button class="detail-button" data-action="detail" data-id="${escapeHTML(job.id)}">查看详情 ↗</button></div></div></article>`;
 }
@@ -167,12 +174,13 @@ function render() {
   syncPublishedJobs();
   updateResumeWelcome();
   const visible = filterJobs(jobs, { ...jobFilters, query: $('#search').value });
-  $('#result-count').innerHTML = `<strong>${visible.length}</strong> 个实习机会 · ${visible.filter(job => job.planId).length} 个酒店发布演示`;
+  const resourceCount = visible.filter(job => job.resourcePool).length;
+  $('#result-count').innerHTML = `<strong>${visible.length}</strong> 条酒店与岗位信息${resourceCount ? ` · 含 ${resourceCount} 家首批酒店资源` : ''}`;
   $('#job-list').innerHTML = visible.length ? visible.slice(0,visibleLimit).map(card).join('') : emptyState('jobs');
   renderFilterSummary();
   const more = $('#job-load-more'); if (more) { more.hidden = visible.length <= visibleLimit; more.textContent = `再看 ${Math.min(12,visible.length-visibleLimit)} 个机会 ↓`; }
-  const progress = $('#job-page-progress'); if (progress) progress.textContent = visible.length ? `已展示 ${Math.min(visibleLimit,visible.length)} / ${visible.length} 个岗位` : '';
-  const scope = $('#job-sample-scope'); if (scope) scope.textContent = `${new Set(jobs.map(j => j.city)).size} 个城市 · ${new Set(jobs.map(j => j.brandId).filter(Boolean)).size} 个品牌 · ${jobs.some(j=>j.planId)?'酒店发布与公开样本':'公开招聘样本'}`;
+  const progress = $('#job-page-progress'); if (progress) progress.textContent = visible.length ? `已展示 ${Math.min(visibleLimit,visible.length)} / ${visible.length} 条信息` : '';
+  const scope = $('#job-sample-scope'); if (scope) scope.textContent = `${new Set(jobs.map(j => j.city)).size} 个城市 · ${new Set(jobs.map(j => j.brandId).filter(Boolean)).size} 个品牌 · ${resourcePool?.records?.length || 0} 家首批酒店资源优先展示`;
   const saved = jobs.filter(job => favorites.includes(job.id));
   $('#favorite-list').innerHTML = saved.length ? saved.map(card).join('') : emptyState('favorites');
   all('[data-fav-count]').forEach(element => element.textContent = favorites.length);
@@ -193,6 +201,7 @@ function updateResumeWelcome() {
 function selectApplicationJob(id) {
   syncPublishedJobs();
   const job = jobs.find(j=>j.id===id); if(!job) return toast('这个岗位已暂停或关闭，请重新选择。');
+  if (job.resourcePool) return showResourceInquiry(id);
   const api=window.JiulvDemo;
   if(!api?.save('intent:v5',{hotelId:job.hotelId||job.id,jobId:job.id,hotelName:job.name,position:job.role,planId:job.planId||null,planRevision:job.planRevision||null,conditionSnapshot:job.conditionSnapshot||null,source:'explicit',selectedAt:new Date().toISOString(),accountId:api.getAccount()?.id||null})) return;
   if($('#modal').open)$('#modal').close();
@@ -237,10 +246,11 @@ function openModal(content, kicker) {
 }
 function showJob(id) {
   syncPublishedJobs();
-  const job = jobs.find(item => item.id === id); if (!job) return;
-  activeJob = id;
+  const job = jobs.find(item => item.id === id || item.supersedesJobIds?.includes(id)); if (!job) return;
+  activeJob = job.id;
   const officialLink = hotelWebsite(job, '走进酒店官网 ↗');
   window.JiulvGrowth?.recordHotelView(job);
+  if (job.resourcePool) return showResourceHotel(job, officialLink);
   const conditions=job.conditionSnapshot?.conditions;
   const conditionGroups = conditions ? window.JiulvRecruitmentCatalog?.conditionDisplayGroups?.(conditions) : [
     {id:'work',title:'岗位要求',rows:[['学历与专业要求',job.education],['英语要求',job.languages],['排班方式',job.schedule],['轮岗安排',job.rotation]]},
@@ -255,10 +265,22 @@ function showJob(id) {
 
   openModal(`<div class="detail-brand-heading">${hotelBrandMark(job)}<div><span class="overline">${escapeHTML(jobBrand(job).group || 'HOTEL PROFILE')}</span><h2 id="modal-title">${escapeHTML(job.name)}</h2></div></div>${officialLink ? `<div class="detail-official">${officialLink}</div>` : ''}<p class="detail-subtitle">${escapeHTML(cityLabel(job.city))}</p>${hotelIntroductionHTML(job)}<div class="hotel-public-opening"><span class="overline">YOUR INTERNSHIP</span><h3>实习信息</h3><strong>${escapeHTML(job.role)}</strong><p>${escapeHTML(job.duration)}${job.demand ? ` · 招募 ${escapeHTML(job.demand)} 人` : ''}</p>${departmentNote ? `<div class="hotel-department-note"><b>部门具体岗位说明</b><p>${escapeHTML(departmentNote)}</p></div>` : ''}</div><div class="note-box">${job.planId?`这份条件由酒店账户填写，发布版本 ${escapeHTML(job.planRevision)}。本机演示，不代表完成实地核验。`:(job.evidenceStatus==='检索摘要'?'本条依据公开检索摘要整理，信息可能滞后。':'本条来自公开岗位页面。')+'名额与条件尚未经酒店核验；多个招聘部门不等于保证轮岗。'}</div>${detailsHTML}<h3 class="modal-section-title">申请前再问清楚</h3><ul class="detail-notes">${(job.notes || []).filter(note => note !== departmentNote).map(note => `<li>${escapeHTML(note)}</li>`).join('')}<li>津贴是否有扣费、何时发放；休息日是否供餐。</li><li>具体到岗日期、名额、带教和学校实习协议安排。</li></ul>${otherHotelPlansHTML(job)}<div class="detail-footer"><button class="primary" data-action="apply-job" data-id="${escapeHTML(id)}">${window.JiulvFeatures?.resume?.hasSavedResume?.() ? '申请岗位' : '制作简历并申请这个岗位'}</button><button class="secondary" data-action="hotel-reviews" data-id="${escapeHTML(id)}">查看该酒店实习评价</button><button class="secondary" data-action="share" data-id="${escapeHTML(id)}">生成群分享文字</button></div><p class="source-line">来源：${escapeHTML(job.sourceName)} · ${escapeHTML(job.evidenceStatus || '待复核')}<br>核查编号：${escapeHTML(job.sourceId || job.id)} · 资料查看日期：${escapeHTML(job.checkedAt)}${job.planId?'；本机发布演示日期。':'；此日期不代表酒店确认日期。'}<br>本站投递仅为本机授权预览。真实代投递与酒店回应服务尚未开通。</p>`, 'INTERNSHIP DETAILS / 岗位信息');
 }
+function showResourceHotel(job, officialLink) {
+  const groups = (job.conditionGroups || []).map(group => ({ ...group, title: group.id === 'work' ? '年度招聘计划' : group.title, rows: group.rows.filter(([label,value]) => value !== '待确认' || label.includes('基础津贴')) })).filter(group => group.rows.length).sort((a,b) => ['pay','dorm','life','work'].indexOf(a.id) - ['pay','dorm','life','work'].indexOf(b.id));
+  const detailsHTML = groups.map(group => `<section class="job-condition-group"><h4>${escapeHTML(group.title)}</h4><dl class="detail-grid">${group.rows.map(([label,value]) => `<div><dt>${escapeHTML(label)}</dt><dd>${escapeHTML(value || '待确认')}</dd></div>`).join('')}</dl></section>`).join('');
+  openModal(`<div class="detail-brand-heading">${hotelBrandMark(job)}<div><span class="overline">${escapeHTML(jobBrand(job).group || 'HOTEL PROFILE')}</span><h2 id="modal-title">${escapeHTML(job.name)}</h2></div></div><p class="detail-subtitle">${escapeHTML(cityLabel(job.city))} · ${escapeHTML(jobBrand(job).brand || '品牌待核实')}</p>${officialLink ? `<div class="detail-official">${officialLink}</div>` : ''}<div class="resource-detail-intro"><span class="overline">OUR FIRST HOTEL COLLECTION</span><h3>先了解条件，再选择下一站</h3><p>来自首批 26 家酒店的2027年实习计划调查。以下保留酒店填报的津贴、住宿和通勤安排，供你提前比较。</p><small>调查资料不等于当前开放岗位；具体部门、名额与开始时间尚待酒店确认。</small></div>${detailsHTML}<section class="job-condition-group"><h4>申请前还需确认</h4><p class="resource-pending">岗位部门、到岗月份、实习时长、学历与英语要求、排班、餐食、保险和学校手续，原表未收集，请在正式投递前确认。</p>${job.notes?.slice(3).length ? `<ul class="detail-notes">${job.notes.slice(3).map(note => `<li>${escapeHTML(note)}</li>`).join('')}</ul>` : ''}</section><div class="detail-footer"><button class="primary" data-action="resource-inquiry" data-id="${escapeHTML(job.id)}">向平台咨询这家酒店</button><button class="secondary" data-action="favorite" data-id="${escapeHTML(job.id)}">${favorites.includes(job.id) ? '已收藏 ♥' : '收藏这家酒店 ♡'}</button><button class="secondary" data-action="share" data-id="${escapeHTML(job.id)}">分享给同学</button></div><p class="source-line">来源：${escapeHTML(job.sourceName)} · ${escapeHTML(job.sourceId || job.id)}<br>资料整理于 ${escapeHTML(job.checkedAt)}，不代表完成酒店注册或岗位核验。企业联系方式不作公开展示。</p>`, 'HOTEL RESOURCE / 酒店资源');
+}
+function showResourceInquiry(id) {
+  const job = jobs.find(item => item.id === id && item.resourcePool); if (!job) return;
+  if ($('#modal').open) $('#modal').close();
+  showView('contact');
+  const message = document.querySelector('#contact-form [name="message"]');
+  if (message) { message.value = `想了解${job.name}（2027年实习计划调查）的招聘安排，请帮助确认岗位部门、可到岗月份及申请方式。`; message.focus(); }
+}
 function showCompare() {
   const selected = comparisons.map(id => jobs.find(job => job.id === id)).filter(Boolean);
   if (!selected.length) return toast('请先选择需要对比的岗位。');
-  const rows = [['基础津贴', allowanceText], ['津贴说明', job => job.salaryNote], ['其他补贴', job => job.conditionSnapshot?.conditions?.values?.otherSubsidies || '待确认'], ['一次性奖励金', job => job.conditionSnapshot?.conditions?.values?.completionBonus || '待确认'], ['学历要求', job => job.education || '待确认'], ['英语要求', job => job.languages || '待确认'], ['最低实习时长', job => { const value = job.conditionSnapshot?.conditions?.values?.minimumDurationMonths; return value === '不限' ? '不限' : /^(?:[1-9]|1[0-2])$/.test(value || '') ? `至少${value}个月` : '待确认'; }], ['实习期限', job => job.duration], ['住宿安排', job => job.dorm], ['宿舍人数', job => job.conditionSnapshot?.conditions?.values?.dormOccupancy ? `${job.conditionSnapshot.conditions.values.dormOccupancy}人间` : '待确认'], ['宿舍水电费', job => job.conditionSnapshot?.conditions?.values?.dormUtilities || '待确认'], ['通勤', job => job.commute], ['餐食', job => job.meals], ['是否有清真餐', job => job.conditionSnapshot?.conditions?.values?.halalMeals || '待确认'], ['身高要求', job => job.conditionSnapshot?.conditions?.values?.heightRequirement || '待确认'], ['轮岗', job => job.rotation], ['工作与休息', job => job.schedule], ['学校三方协议', () => '待确认'], ['招聘状态', job => job.recruitmentStatus === 'published' ? '正在招聘 · 本机演示' : '待酒店确认']];
+  const rows = [['基础津贴', allowanceText], ['津贴说明', job => job.salaryNote], ['其他补贴', job => job.details?.extraAllowance || job.conditionSnapshot?.conditions?.values?.otherSubsidies || '待确认'], ['一次性奖励金', job => job.conditionSnapshot?.conditions?.values?.completionBonus || '待确认'], ['学历要求', job => job.education || '待确认'], ['英语要求', job => job.languages || '待确认'], ['最低实习时长', job => { const value = job.conditionSnapshot?.conditions?.values?.minimumDurationMonths; return value === '不限' ? '不限' : /^(?:[1-9]|1[0-2])$/.test(value || '') ? `至少${value}个月` : '待确认'; }], ['实习期限', job => job.duration], ['住宿安排', job => job.dorm], ['宿舍人数', job => job.resourcePool ? job.dorm : job.conditionSnapshot?.conditions?.values?.dormOccupancy ? `${job.conditionSnapshot.conditions.values.dormOccupancy}人间` : '待确认'], ['宿舍水电费', job => job.conditionSnapshot?.conditions?.values?.dormUtilities || '待确认'], ['通勤', job => job.commute], ['餐食', job => job.meals], ['是否有清真餐', job => job.conditionSnapshot?.conditions?.values?.halalMeals || '待确认'], ['身高要求', job => job.conditionSnapshot?.conditions?.values?.heightRequirement || '待确认'], ['轮岗', job => job.rotation], ['工作与休息', job => job.schedule], ['学校三方协议', () => '待确认'], ['招聘状态', job => job.resourcePool ? '2027年调查计划 · 岗位待确认' : job.recruitmentStatus === 'published' ? '正在招聘 · 本机演示' : '待酒店确认']];
   openModal(`<h2 id="modal-title">把条件放在一起看</h2><p class="detail-subtitle">已选 ${selected.length} 个岗位 · 表格可左右滑动</p><div class="compare-scroll" tabindex="0" role="region" aria-label="岗位条件对比表"><table class="compare-table"><thead><tr><th scope="col">关注点</th>${selected.map(job => `<th scope="col">${escapeHTML(job.name)}</th>`).join('')}</tr></thead><tbody>${rows.map(([label, get]) => `<tr><th scope="row">${label}</th>${selected.map(job => `<td class="${unknown(get(job)) ? 'unknown' : ''}">${escapeHTML(get(job))}</td>`).join('')}</tr>`).join('')}</tbody></table></div><div class="note-box">待确认的项目请向酒店询问。“提供住宿”不代表免费，“实习岗位涉及多个部门”不代表可轮岗。</div>`, 'SIDE BY SIDE / 岗位对比');
 }
 function intentCityOptions(regionId, selected = '') {
@@ -276,7 +298,7 @@ function showIntent() {
 function showShare(id) {
   const job = jobs.find(item => item.id === id); if (!job) return;
   const platformLink = new URL(location.href); platformLink.hash = ''; platformLink.searchParams.set('job', job.id);
-  const content = `【酒旅之星 · 酒店实习信息】\n${job.name}｜${job.role}\n城市：${cityLabel(job.city)}\n津贴：${allowanceText(job)}\n说明：${job.salaryNote}\n期限：${job.duration}\n住宿：${job.dorm}\n餐食：${job.meals}\n通勤：${job.commute}｜轮岗：${job.rotation}\n公开信息未经酒店核验，招聘状态及具体条件待确认。\n资料查看：${job.checkedAt}\n在酒旅之星查看：${platformLink.href}`;
+  const content = `【酒旅之星 · 酒店实习信息】\n${job.name}｜${job.role}\n城市：${cityLabel(job.city)}\n津贴：${allowanceText(job)}\n说明：${job.salaryNote}\n期限：${job.duration}\n住宿：${job.dorm}\n餐食：${job.meals}\n通勤：${job.commute}｜轮岗：${job.rotation}\n${job.resourcePool ? '2027年实习计划调查，非当前岗位公告；具体部门与到岗时间待确认。' : '公开信息未经酒店核验，招聘状态及具体条件待确认。'}\n资料查看：${job.checkedAt}\n在酒旅之星查看：${platformLink.href}`;
   openModal(`<h2 id="modal-title">给同学分享一个机会</h2><p class="detail-subtitle">分享平台岗位卡片与信息状态，朋友可以先浏览，再决定是否投递。</p><textarea class="share-text" id="share-text" aria-label="岗位分享文字" readonly>${escapeHTML(content)}</textarea><div class="detail-footer"><button class="primary" data-action="copy-share">复制分享文字</button><button class="secondary" data-action="detail" data-id="${escapeHTML(id)}">返回岗位</button></div><p class="source-line">此操作不会自动发送微信消息。</p>`, 'SHARE AN OPPORTUNITY / 分享岗位');
 }
 function showGuide() {
@@ -309,7 +331,7 @@ document.addEventListener('click', async event => {
   if (action === 'favorite') {
     const next = favorites.includes(id) ? favorites.filter(value => value !== id) : [...favorites, id];
     if (!saveLocal('favorites', next)) return;
-    favorites = next; render(); toast(favorites.includes(id) ? '已收藏到本机浏览器' : '已取消收藏');
+    favorites = next; render(); if ($('#modal').open && activeJob === id && jobs.find(job => job.id === id)?.resourcePool) showJob(id); toast(favorites.includes(id) ? '已收藏到本机浏览器' : '已取消收藏');
   } else if (action === 'toggle-compare') {
     const result = toggleCompare(comparisons, id);
     if (result.limited) return toast('最多对比3个岗位，请先移除一个。');
@@ -318,6 +340,7 @@ document.addEventListener('click', async event => {
   else if (action === 'compare') showCompare();
   else if (action === 'detail') showJob(id);
   else if (action === 'apply-job') selectApplicationJob(id);
+  else if (action === 'resource-inquiry') showResourceInquiry(id);
   else if (action === 'hotel-reviews') { if ($('#modal').open) $('#modal').close(); window.JiulvFeatures.community?.setHotel(id); showView('community'); }
   else if (action === 'intent') showIntent();
   else if (action === 'guide') showGuide();

@@ -9,7 +9,7 @@
     {value:'other',label:'其他'}
   ].map(Object.freeze));
   const activeStages=['pending_hotel','pending_student','interview'];
-  const fieldLabels={name:'姓名',gender:'性别',birthMonth:'出生年月',birthplace:'出生地',height:'身高（cm）',weight:'体重（kg）',school:'学校',major:'专业',degree:'学历',enrollment:'入学时间',graduation:'毕业时间',educationSummary:'教育背景补充',startDate:'最早到岗',endDate:'最晚结束',startMonth:'开始年月',endMonth:'结束年月',duration:'可实习周期',intentionCities:'意向城市',intentionRoles:'意向岗位',experienceLevel:'经历情况',conversionIntent:'转正意向',englishLevel:'英语能力',languages:'外语能力',skills:'技能证书',experience:'兼职与实习经历',clubs:'校园与社团经历',objective:'实习意向'};
+  const fieldLabels={name:'姓名',gender:'性别',birthMonth:'出生年月',birthplace:'出生地',height:'身高（cm）',weight:'体重（kg）',school:'学校',major:'专业',degree:'学历',enrollment:'入学时间',graduation:'毕业时间',educationSummary:'教育背景补充',startDate:'最早到岗',endDate:'最晚结束',startMonth:'开始年月',endMonth:'结束年月',duration:'可实习周期',intentionCities:'意向城市',intentionRoles:'意向岗位',experienceLevel:'经历情况',conversionIntent:'留任意向',extensionIntent:'是否可延长实习',tripartiteIntent:'是否可签三方协议',englishLevel:'英语能力',languages:'外语能力',skills:'技能证书',experience:'兼职与实习经历',clubs:'校园与社团经历',objective:'实习意向'};
   const clean=(v,max=1800)=>typeof v==='string'?v.normalize('NFKC').replace(/[\u200B-\u200F\u202A-\u202E\u2060\uFEFF]/g,'').trim().slice(0,max):'';
   const clone=v=>JSON.parse(JSON.stringify(v));
   const standardCore=()=>typeof module!=='undefined'&&module.exports?require('./core.js'):root.JiulvCore;
@@ -58,7 +58,7 @@
     const out={version:clean(raw.version,80),generatedAt:clean(raw.generatedAt,40),sharedFields:[],sharingGroups:['identity','education','intention','ability','experience'],contactRedacted:true};
     for(const [key,label] of Object.entries(fieldLabels)){
       const rawValue=clean(raw[key]);if(!rawValue)continue;
-      const value=key==='englishLevel'?canonicalEnglish(rawValue):['startDate','endDate'].includes(key)?(/^\d{4}-\d{2}-\d{2}$/.test(rawValue)?rawValue:''):['enrollment','graduation','startMonth','endMonth','birthMonth'].includes(key)?(/^\d{4}-(0[1-9]|1[0-2])$/.test(rawValue)?rawValue:''):['experience','clubs'].includes(key)?redactExperience(rawValue):redact(rawValue);
+      const value=['extensionIntent','tripartiteIntent'].includes(key)?(['可以','不可以','待确认'].includes(rawValue)?rawValue:''):key==='englishLevel'?canonicalEnglish(rawValue):['startDate','endDate'].includes(key)?(/^\d{4}-\d{2}-\d{2}$/.test(rawValue)?rawValue:''):['enrollment','graduation','startMonth','endMonth','birthMonth'].includes(key)?(/^\d{4}-(0[1-9]|1[0-2])$/.test(rawValue)?rawValue:''):['experience','clubs'].includes(key)?redactExperience(rawValue):redact(rawValue);
       if(value){out[key]=value;out.sharedFields.push(label);}
     }
     return out;
@@ -93,15 +93,24 @@
     const out={},phone=clean(a.phone,30).replace(/[\s()-]/g,'');
     if(verifiedField(a,'phone')&&/^\+?\d{7,15}$/.test(phone))out.phone=phone;
     const address=email(a.email);if(verifiedField(a,'email')&&address)out.email=address;
+    const wechat=clean(a.wechat,64);if(/^[a-zA-Z][a-zA-Z0-9_-]{5,63}$/.test(wechat))out.wechat=wechat;
     return out;
+  }
+  function grantedContacts(r){
+    const contact=studentContacts(r.contactSnapshot||{});
+    // Historic grants authorized only phone/email. New channels require an
+    // explicit field list captured when the student reviews this record.
+    const allowed=Array.isArray(r.contactGrant?.fields)?r.contactGrant.fields:['phone','email'];
+    for(const key of Object.keys(contact))if(!allowed.includes(key))delete contact[key];
+    return contact;
   }
   const binding=r=>({recordId:r.id,studentId:r.studentId,hotelId:r.hotelId,hotelAccountId:r.hotelAccountId||null,deliveryId:r.deliveryId||null,recipientEmail:email(r.recipientEmail)});
   function sameBinding(r,b){return Boolean(b&&Object.entries(binding(r)).every(([key,value])=>b[key]===value));}
-  function validGrant(r){return r.contactGrant?.scope==='this-record-after-screening'&&sameBinding(r,r.contactGrant)&&Object.keys(studentContacts(r.contactSnapshot||{})).length>0;}
+  function validGrant(r){return r.contactGrant?.scope==='this-record-after-screening'&&sameBinding(r,r.contactGrant)&&Object.keys(grantedContacts(r)).length>0;}
   function grantContacts(r,a,at){
     if(a.role!=='student'||a.id!==r.studentId)throw Error('联系方式只能由学生本人授权。');
     const contact=studentContacts(a);if(!Object.keys(contact).length)throw Error('请先补充并核验手机号，再授权本次联系。');
-    r.contactSnapshot=contact;r.contactGrant={...binding(r),scope:'this-record-after-screening',grantedAt:at};
+    r.contactSnapshot=contact;r.contactGrant={...binding(r),scope:'this-record-after-screening',fields:Object.keys(contact),grantedAt:at};
   }
   function hotelContacts(a={}){
     const accountCore=typeof module!=='undefined'&&module.exports?require('./account-core.js'):root.JiulvAccountCore;
@@ -212,7 +221,7 @@
     r.resumeSnapshot=sanitizeSnapshot(r.resumeSnapshot);
     Object.assign(r,transferPreference(r));
     r.contactConsent={granted,grantedAt:granted?row.contactGrant.grantedAt:null,released,legacyNeedsConsent:!granted&&['pending_hotel','interview'].includes(row.stage)};
-    if(a.role==='hotel'&&released)r.contactDetails=studentContacts(row.contactSnapshot);
+    if(a.role==='hotel'&&released)r.contactDetails=grantedContacts(row);
     if(a.role==='student'&&canRelease(row)&&sameBinding(row,row.hotelContactBinding)){
       const address=email(row.hotelContactSnapshot?.email),phone=clean(row.hotelContactSnapshot?.phone,30).replace(/[\s()-]/g,'');
       if(address||/^1\d{10}$/.test(phone))r.hotelContactDetails={name:clean(row.hotelContactSnapshot?.name,80),...(address?{email:address}:{}),...(/^1\d{10}$/.test(phone)?{phone}:{})};

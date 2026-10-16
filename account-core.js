@@ -57,6 +57,18 @@
     return { allowed: true, reason: 'demo-profile-complete' };
   }
   const hotelComplete = account => hotelAccess(account).allowed;
+  function hotelBrandOptions(groups, groupId) {
+    if (groupId === 'independent') return [{ id: 'independent', name: '独立酒店 / 无连锁品牌' }, { id: 'other', name: '其他品牌 / 待补充' }];
+    const group = (Array.isArray(groups) ? groups : []).find(item => item.id === groupId);
+    if (!group) return [];
+    return [...(group.brands || []).map(({ id, name, english }) => ({ id, name, english })), { id: 'other', name: '其他品牌 / 待补充' }];
+  }
+  // Required only when creating a new account. Historical accounts without a
+  // catalog association keep their access and records; no brand is inferred.
+  function hotelBrandSelection(groups, groupId, brandId) {
+    const brand = hotelBrandOptions(groups, groupId).find(item => item.id === clean(brandId));
+    return brand ? { brandId: brand.id, brandName: brand.name, brandPending: brand.id === 'other' } : null;
+  }
   function accountLibrary(raw) { return { students: Array.isArray(raw?.students) ? raw.students.filter(a => a && a.id && a.role === 'student') : [], hotels: Array.isArray(raw?.hotels) ? raw.hotels.filter(a => a && a.id && a.role === 'hotel') : [] }; }
   function issueChallenge({ role, mode, channel, target }, now = Date.now()) {
     if (!validTarget(channel, target)) return null;
@@ -68,6 +80,6 @@
     hotel: { hotelName: '星湾示范酒店（虚构）', hotelCity: '上海 · 示例区域', reporterName: '示例 HR（虚构）', hrEmail: 'hr@starbay.example.invalid' }
   };
   function isExample(role, values, channel, activated) { if (!activated) return false; const keys = role === 'hotel' ? ['hotelName', 'hotelCity', 'reporterName', 'hrEmail'] : [...['name', 'school', 'major'].filter(key => clean(values[key])), ...(channel === 'wechat' ? [] : [channel]), ...['phone', 'email'].filter(key => clean(values[key]))]; return keys.every(key => clean(values[key]) === examples[role][key]); }
-  const api = { clean, roleKey, normalizeTarget, validTarget, wechatDemoComplete, studentComplete, resolveStudentIdentity, hotelComplete, hotelAccess, hotelVerifiedTarget, businessLicenseError, licenseSelection, sampleBusinessLicense, businessLicenseComplete, licenseMaxBytes, accountLibrary, issueChallenge, verifyChallenge, examples, isExample };
+  const api = { clean, roleKey, normalizeTarget, validTarget, wechatDemoComplete, studentComplete, resolveStudentIdentity, hotelComplete, hotelAccess, hotelVerifiedTarget, hotelBrandOptions, hotelBrandSelection, businessLicenseError, licenseSelection, sampleBusinessLicense, businessLicenseComplete, licenseMaxBytes, accountLibrary, issueChallenge, verifyChallenge, examples, isExample };
   if (typeof module !== 'undefined' && module.exports) module.exports = api; else root.JiulvAccountCore = api;
 })(typeof window !== 'undefined' ? window : this);
