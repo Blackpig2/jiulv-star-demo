@@ -2424,7 +2424,7 @@ window.JIULV_HOTEL_GROUPS = [
     {
       id: 'banyan', name: '悦榕集团', english: 'Banyan Group', region: '国际集团',
       officialUrl: 'https://www.groupbanyan.com/', sourceUrl: 'https://www.groupbanyan.com/our-brands',
-      intro: '悦榕集团的酒店品牌重视目的地文化、自然体验与康养。此处先收录首批酒店资源涉及的悦榕庄品牌。',
+      intro: '悦榕集团的酒店品牌重视目的地文化、自然体验与康养。旗下悦榕庄以度假与康养体验为特色。',
       focus: '城市酒店与度假酒店的工作节奏不同，关注具体部门、班次与实习生生活安排。',
       brands: [{ id: 'banyan-tree', name: '悦榕庄', english: 'Banyan Tree', category: '奢华与生活方式', intro: '以设计、自然与康养体验为特色，覆盖城市休憩与度假场景。', officialUrl: 'https://www.banyantree.com/' }]
     },
@@ -2441,7 +2441,7 @@ window.JIULV_HOTEL_GROUPS = [
     {
       id: 'shangri-la', name: '香格里拉集团', english: 'Shangri-La Group', region: '中国集团',
       officialUrl: 'https://www.shangri-la.com/group/', sourceUrl: 'https://www.shangri-la.com/group/',
-      intro: '香格里拉集团的酒店服务涵盖城市商务、餐饮会务与休闲度假。此处先收录首批资源涉及的香格里拉品牌。',
+      intro: '香格里拉集团的酒店服务涵盖城市商务、餐饮会务与休闲度假。香格里拉品牌以亚洲待客传统为特色。',
       focus: '同品牌酒店的部门规模与客群不同，具体实习岗位和带教安排由单体酒店确认。',
       brands: [{ id: 'shangri-la', name: '香格里拉', english: 'Shangri-La', category: '奢华与生活方式', intro: '以亚洲待客传统为特色的奢华酒店与度假品牌。', officialUrl: 'https://www.shangri-la.com/' }]
     },
@@ -2472,6 +2472,141 @@ window.JIULV_HOTEL_GROUPS = [
   ]) {
     const brand = window.JIULV_HOTEL_GROUPS.find(group => group.id === groupId)?.brands.find(item => item.id === brandId);
     if (brand) { brand.sourceUrl = sourceUrl; brand.verifiedAt = checkedAt; }
+  }
+})();
+// Official logo files preserve original colors; white originals use a dark display frame.
+(function () {
+  const logos = [
+  {
+    "kind": "group",
+    "id": "radisson",
+    "path": "assets/brands/group-radisson-official-20261016.jpg",
+    "sourcePage": "https://www.radissonhotels.com/en-us/corporate",
+    "darkLogo": false
+  },
+  {
+    "kind": "brand",
+    "id": "radisson-collection",
+    "path": "assets/brands/radisson-collection-official-20261016.jpg",
+    "sourcePage": "https://www.radissonhotels.com/en-us/corporate",
+    "darkLogo": false
+  },
+  {
+    "kind": "brand",
+    "id": "radisson-blu",
+    "path": "assets/brands/radisson-blu-official-20261016.jpg",
+    "sourcePage": "https://www.radissonhotels.com/en-us/corporate",
+    "darkLogo": false
+  },
+  {
+    "kind": "group",
+    "id": "puli",
+    "path": "assets/brands/group-puli-official-20261016.svg",
+    "sourcePage": "https://thepuli.com/en/",
+    "darkLogo": false
+  },
+  {
+    "kind": "brand",
+    "id": "puli",
+    "path": "assets/brands/puli-official-20261016.svg",
+    "sourcePage": "https://thepuli.com/en/",
+    "darkLogo": false
+  },
+  {
+    "kind": "group",
+    "id": "sukhothai",
+    "path": "assets/brands/sukhothai-official-20261016.svg",
+    "sourcePage": "https://www.sukhothai.com/",
+    "darkLogo": false
+  },
+  {
+    "kind": "brand",
+    "id": "sukhothai",
+    "path": "assets/brands/sukhothai-official-20261016.svg",
+    "sourcePage": "https://www.sukhothai.com/",
+    "darkLogo": false
+  },
+  {
+    "kind": "group",
+    "id": "banyan",
+    "path": "assets/brands/group-banyan-official-20261016.svg",
+    "sourcePage": "https://www.groupbanyan.com/our-brands",
+    "darkLogo": true
+  },
+  {
+    "kind": "brand",
+    "id": "banyan-tree",
+    "path": "assets/brands/banyan-tree-official-20261016.svg",
+    "sourcePage": "https://www.groupbanyan.com/our-brands",
+    "darkLogo": true
+  },
+  {
+    "kind": "group",
+    "id": "artyzen",
+    "path": "assets/brands/artyzen-group-official-20261016.svg",
+    "sourcePage": "https://www.artyzen.com/en/hotels/artyzen-new-bund-31-shanghai/",
+    "darkLogo": false
+  },
+  {
+    "kind": "group",
+    "id": "plaza-premium",
+    "path": "assets/brands/plaza-premium-group-official-20261016.svg",
+    "sourcePage": "https://www.plazapremiumgroup.com/",
+    "darkLogo": false
+  },
+  {
+    "kind": "group",
+    "id": "shangri-la",
+    "path": "assets/brands/shangri-la-group-official-20261016.webp",
+    "sourcePage": "https://www.shangri-la.com/group/",
+    "darkLogo": false
+  },
+  {
+    "kind": "brand",
+    "id": "shangri-la",
+    "path": "assets/brands/shangri-la-official-20261016.webp",
+    "sourcePage": "https://www.shangri-la.com/cn/",
+    "darkLogo": false
+  },
+  {
+    "kind": "group",
+    "id": "melia",
+    "path": "assets/brands/melia-group-official-20261016.png",
+    "sourcePage": "https://onboarding.melia.com/landings/home_spanish.html",
+    "darkLogo": true
+  },
+  {
+    "kind": "brand",
+    "id": "melia",
+    "path": "assets/brands/melia-official-20261016.png",
+    "sourcePage": "https://onboarding.melia.com/landings/home_spanish.html",
+    "darkLogo": true
+  },
+  {
+    "kind": "brand",
+    "id": "aerotel",
+    "path": "assets/brands/aerotel-official-20261016.png",
+    "sourcePage": "https://www.plazapremiumgroup.com/portfolio/?scrollto=hotel",
+    "darkLogo": true
+  },
+  {
+    "kind": "brand",
+    "id": "artyzen",
+    "path": "assets/brands/artyzen-official-20261016.svg",
+    "sourcePage": "https://www.artyzen.com/en/hotels/artyzen-new-bund-31-shanghai/",
+    "darkLogo": false
+  },
+  {
+    "kind": "brand",
+    "id": "artyzen-habitat",
+    "path": "assets/brands/artyzen-habitat-official-20261016.svg",
+    "sourcePage": "https://www.artyzen.com/en/hotels/artyzen-new-bund-31-shanghai/",
+    "darkLogo": false
+  }
+];
+  for (const item of logos) {
+    const target = item.kind === 'group' ? window.JIULV_HOTEL_GROUPS.find(group => group.id === item.id) : window.JIULV_HOTEL_GROUPS.flatMap(group => group.brands).find(brand => brand.id === item.id);
+    if (target) Object.assign(target, {logo:item.path, logoKind:'official', logoSource:item.sourcePage, darkLogo:item.darkLogo});
   }
 })();
 if (typeof module !== 'undefined' && module.exports) module.exports = { groups: window.JIULV_HOTEL_GROUPS, legacy: window.JIULV_BRANDS };

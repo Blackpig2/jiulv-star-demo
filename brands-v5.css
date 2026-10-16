@@ -10,3 +10,18 @@
 
 /* Official square canvases contain generous empty margins; enlarge the intact mark, not the card. */
 .v5-brand-mark img[src$="/yingnflo-official-v53.png"],.v5-brand-mark img[src$="/group-langham-official-v53.png"]{transform:scale(2);transform-origin:center}
+
+/* Original artwork retains color and geometry; contain frames match the existing matrix. */
+.hotel-mark.brand-mark img { filter:none; mix-blend-mode:normal; opacity:1; }
+.v5-brand-mark img[src$="group-radisson-official-20261016.jpg"],
+.brand-mark img[src$="group-radisson-official-20261016.jpg"],
+.v5-brand-mark img[src$="radisson-blu-official-20261016.jpg"],
+.brand-mark img[src$="radisson-blu-official-20261016.jpg"],
+.v5-brand-mark img[src$="radisson-collection-official-20261016.jpg"],
+.brand-mark img[src$="radisson-collection-official-20261016.jpg"] { object-fit:cover!important; }
+.v5-brand-mark img[src$="melia-official-20261016.png"],
+.brand-mark img[src$="melia-official-20261016.png"] { transform:scale(1.8); }
+.v5-brand-mark img[src$="artyzen-official-20261016.svg"],
+.brand-mark img[src$="artyzen-official-20261016.svg"] { transform:scale(1.15); }
+.v5-brand-mark img[src$="artyzen-habitat-official-20261016.svg"],
+.brand-mark img[src$="artyzen-habitat-official-20261016.svg"] { object-fit:cover!important; }

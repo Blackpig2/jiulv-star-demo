@@ -184,34 +184,10 @@
   .employer-month-filter input { flex: 1; }
 }
 
-/* Survey resources are hotel profiles, not invented current vacancies. */
-.resource-card { border-color: #d6dfcc; }
-.resource-card-kicker { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:8px; padding-bottom:16px; margin-bottom:18px; border-bottom:1px solid #e7ebdf; }
-.resource-card-kicker>span { color:#345846; background:#edf2e6; border-radius:5px; padding:4px 8px; font-size:11px; font-weight:600; }
-.resource-card-kicker small { font-size:11px; color:#818b78; }
-.resource-card .job-title h3 { font-size:18px; line-height:1.55; }
-.resource-card-allowance { margin:22px 0 18px; }
-.resource-card-allowance>span { display:block; font-size:11px; color:#7a8875; margin-bottom:8px; }
-.resource-card-allowance .allowance-phases { width:100%; max-width:none; }
-.resource-card .facts dd { line-height:1.7; overflow-wrap:anywhere; }
-.resource-card .job-card-bottom { align-items:flex-end; gap:12px; }
-.resource-card .source-status { font-size:10px; line-height:1.7; }
-.resource-detail-intro { padding:22px 24px; margin:24px 0; border:1px solid #dfe6d6; border-radius:12px; background:#f2f5ec; }
-.resource-detail-intro h3 { font-size:20px; line-height:1.6; margin:9px 0; }
-.resource-detail-intro p, .resource-pending { font-size:14px; line-height:1.9; color:#60715f; }
-.resource-detail-intro small { display:block; font-size:12px; line-height:1.8; color:#808b76; margin-top:12px; }
-@media(max-width:760px) {
- .resource-card-kicker { margin-bottom:14px; padding-bottom:12px; }
- .resource-card .job-title h3 { font-size:17px; }
- .resource-card .job-card-bottom { flex-wrap:wrap; }
- .resource-card .card-actions { margin-left:auto; }
- .resource-detail-intro { padding:18px; }
- .resource-detail-intro h3 { font-size:18px; }
-}
-.resource-card-allowance .allowance-phases { grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px; text-align:left; margin:0; padding:14px 16px; background:#f7f6ef; border-radius:8px; }
-.resource-card-allowance .allowance-phases>div { display:flex; flex-direction:column; align-items:flex-start; justify-content:flex-start; gap:4px; min-width:0; }
-.resource-card-allowance .allowance-phases span { font-size:11px; }
-.resource-card-allowance .allowance-phases strong { font-size:17px; line-height:1.5; white-space:normal; }
-.resource-card-allowance .allowance-phases>div+div strong { font-size:16px; }
-.resource-card .facts dt { font-size:11px; }
-.resource-card .facts dd { font-size:12px; }
+/* The same hotel cards and condition sections are used for every data source. */
+.job-card-bottom .card-actions { margin-left:auto; }
+
+/* Long allowance ranges wrap within the existing card, including narrow phones. */
+.allowance-phases { min-width:0; max-width:100%; }
+.allowance-phases strong { white-space:normal; overflow-wrap:anywhere; max-width:230px; }
+@media(max-width:600px) { .allowance-phases strong { max-width:190px; } }
